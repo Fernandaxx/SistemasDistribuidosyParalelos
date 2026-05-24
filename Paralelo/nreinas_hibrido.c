@@ -32,6 +32,11 @@ typedef enum{
     TASK_BACKTRACK2 = 2
 } TaskType;
 
+/* Tipo de tarea: indica qué variante del backtracking ejecutar.
+ * - TASK_BACKTRACK1: primera estrategia (reina en la esquina)
+ * - TASK_BACKTRACK2: segunda estrategia (reina dentro del tablero)
+ */
+
 typedef struct{
     int size;
     int sizee;
@@ -54,6 +59,17 @@ typedef struct{
     unsigned long long unique;
 } NQueenState;
 
+/* Estado local de búsqueda para una rama del tablero N-Queens.
+ * Campos principales:
+ * - `size` / `sizee`: tamaño del tablero y último índice.
+ * - `board[]`: representación de fila->bit donde está la reina.
+ * - `mask`, `topbit`, `sidemask`, `lastmask`, `endbit`: máscaras auxiliares
+ *   usadas para recortes simétricos y restricciones.
+ * - `bound1` / `bound2`: límites usados en heurísticas de simetría.
+ * - `count8/4/2`: contadores para soluciones según su factor de simetría.
+ * - `total` / `unique`: resultados finales calculados a partir de los contadores.
+ */
+
 typedef struct{
     TaskType type;
     int y;
@@ -63,10 +79,19 @@ typedef struct{
     NQueenState initial_state;
 } NQueenTask;
 
+/* Representa una tarea de búsqueda parcial.
+ * Contiene la posición actual (`y`) y las máscaras de ataques (`left/down/right`)
+ * junto con un `initial_state` que fija información de la rama.
+ */
+
 typedef struct{
     NQueenTask tasks[MAX_TASKS];
     int count;
 } TaskList;
+
+/* Lista simple de tareas a ejecutar (usada para compartir trabajo entre hilos
+ * y para distribuir tareas entre procesos MPI).
+ */
 
 typedef struct{
     unsigned long long count8;
@@ -76,12 +101,21 @@ typedef struct{
     unsigned long long total;
 } NQueenResult;
 
+/* Contenedora de los resultados parciales/finales para un proceso o hilo.
+ * `finalize_result()` convierte los contadores simétricos en totales.
+ */
+
 typedef struct{
     const TaskList* task_list;
     int next_task;
     pthread_mutex_t mutex;
     pthread_barrier_t start_barrier;
 } SharedTaskPool;
+
+/* Estructura que contiene la bolsa de tareas compartida entre hilos locales.
+ * - `next_task` se usa como índice atomizado por el mutex para tomar tareas.
+ * - `start_barrier` sincroniza el inicio de la región medida.
+ */
 
 typedef struct{
     int tid;
@@ -91,11 +125,18 @@ typedef struct{
     double elapsed;
 } ThreadData;
 
+/* Datos por hilo: id, puntero al pool compartido y resultados/estadísticas
+ * locales que luego serán reducidos por el proceso.
+ */
+
 static double dwalltime(void){
     struct timeval tv;
     gettimeofday(&tv , NULL);
     return (double) tv.tv_sec + (double) tv.tv_usec / 1000000.0;
 }
+
+/* Retorna el tiempo wall-clock con microsegundos de resolución. Usado para
+ * medir tiempos locales (no MPI_Wtime). */
 
 static void init_state(NQueenState* st , int n){
     st->size = n;
@@ -121,6 +162,10 @@ static void init_state(NQueenState* st , int n){
     }
 }
 
+/* Inicializa un NQueenState para un tablero de tamaño `n`.
+ * Pone en cero contadores y prepara máscaras básicas.
+ */
+
 static void reset_result(NQueenResult* res){
     res->count8 = 0ULL;
     res->count4 = 0ULL;
@@ -129,14 +174,19 @@ static void reset_result(NQueenResult* res){
     res->total = 0ULL;
 }
 
+/* Pone a cero los contadores de un NQueenResult. */
+
 static void finalize_result(NQueenResult* res){
     res->unique = res->count8 + res->count4 + res->count2;
     res->total = (res->count8 * 8ULL) + (res->count4 * 4ULL) + (res->count2 * 2ULL);
 }
 
-/**********************************************/
-/* Check Unique Solutions                     */
-/**********************************************/
+/* Calcula `unique` y `total` a partir de los contadores según la
+ * clasificación de simetría (8x, 4x, 2x). */
+
+ /**********************************************/
+ /* Check Unique Solutions                     */
+ /**********************************************/
 static void check_solution(NQueenState* st){
     int* own;
     int* you;
@@ -195,9 +245,13 @@ static void check_solution(NQueenState* st){
     st->count8++;
 }
 
-/**********************************************/
-/* First queen is inside                      */
-/**********************************************/
+/* Determina la clase de simetría de la solución actual en `st->board`.
+ * Incrementa `count2`, `count4` o `count8` según corresponda.
+ */
+
+ /**********************************************/
+ /* First queen is inside                      */
+ /**********************************************/
 static void backtrack2(NQueenState* st , int y , int left , int down , int right){
     int bitmap;
     int bit;
@@ -231,9 +285,13 @@ static void backtrack2(NQueenState* st , int y , int left , int down , int right
     }
 }
 
-/**********************************************/
-/* First queen is in the corner               */
-/**********************************************/
+/* Variante de backtracking cuando la primera reina está "dentro" del tablero.
+ * Aplica recortes por simetría usando `sidemask`, `bound1` y `bound2`.
+ */
+
+ /**********************************************/
+ /* First queen is in the corner               */
+ /**********************************************/
 static void backtrack1(NQueenState* st , int y , int left , int down , int right){
     int bitmap;
     int bit;
@@ -261,6 +319,11 @@ static void backtrack1(NQueenState* st , int y , int left , int down , int right
     }
 }
 
+/* Variante de backtracking cuando la primera reina está en la esquina.
+ * En el caso base incrementa `count8` porque las soluciones de esta rama
+ * generan 8 simétricas (rotaciones/reflexiones).
+ */
+
 static int add_task(TaskList* task_list ,
                     TaskType type ,
                     const NQueenState* initial_state ,
@@ -284,9 +347,13 @@ static int add_task(TaskList* task_list ,
     return 1;
 }
 
-/**********************************************/
-/* Generacion de tareas globales             */
-/**********************************************/
+/* Añade una tarea a `task_list` copiando el estado inicial. Devuelve 0 si
+ * la lista está llena o 1 si se añadió correctamente.
+ */
+
+ /**********************************************/
+ /* Generacion de tareas globales             */
+ /**********************************************/
 static int generate_tasks(int n , TaskList* task_list){
     NQueenState st;
     int bit;
@@ -347,9 +414,14 @@ static int generate_tasks(int n , TaskList* task_list){
     return 1;
 }
 
-/**********************************************/
-/* Mapeo MPI estatico ciclico                 */
-/**********************************************/
+/* Genera las tareas iniciales (globales) equivalentes a los bucles
+ * principales del algoritmo secuencial. Divide el espacio de búsqueda en
+ * subproblemas que pueden distribuirse entre procesos/hilos.
+ */
+
+ /**********************************************/
+ /* Mapeo MPI estatico ciclico                 */
+ /**********************************************/
 static int build_local_task_list(const TaskList* global_task_list ,
                                  int rank ,
                                  int world_size ,
@@ -367,9 +439,13 @@ static int build_local_task_list(const TaskList* global_task_list ,
     return 1;
 }
 
-/**********************************************/
-/* Ejecucion secuencial de una tarea          */
-/**********************************************/
+/* Construye la lista local de tareas para un proceso MPI usando mapeo
+ * estático cíclico: cada proceso toma las tareas `i` con i%world_size==rank.
+ */
+
+ /**********************************************/
+ /* Ejecucion secuencial de una tarea          */
+ /**********************************************/
 static void execute_task(const NQueenTask* task , NQueenResult* result){
     NQueenState st = task->initial_state;
 
@@ -385,9 +461,13 @@ static void execute_task(const NQueenTask* task , NQueenResult* result){
     result->count2 += st.count2;
 }
 
-/**********************************************/
-/* Worker Pthreads: Bag of Tasks local        */
-/**********************************************/
+/* Ejecuta secuencialmente la tarea `task` y acumula los contadores en `result`.
+ * No modifica `task->initial_state` fuera de la copia local `st`.
+ */
+
+ /**********************************************/
+ /* Worker Pthreads: Bag of Tasks local        */
+ /**********************************************/
 static void* worker_function(void* arg){
     ThreadData* data = (ThreadData*) arg;
     SharedTaskPool* pool = data->pool;
@@ -428,6 +508,12 @@ static void* worker_function(void* arg){
     return NULL;
 }
 
+/* Función ejecutada por cada hilo worker:
+ * - toma tareas del `SharedTaskPool` usando el mutex
+ * - ejecuta `execute_task` para cada tarea
+ * - acumula tiempos y contadores locales en `ThreadData`
+ */
+
 static int prepare_pool(SharedTaskPool* pool , const TaskList* task_list , int num_threads){
     pool->task_list = task_list;
     pool->next_task = 0;
@@ -446,10 +532,16 @@ static int prepare_pool(SharedTaskPool* pool , const TaskList* task_list , int n
     return 1;
 }
 
+/* Inicializa mutex y barrera del pool compartido y enlaza la lista de tareas.
+ * `num_threads` es el número de hilos que usarán la barrera (los hilos + el
+ * hilo que lanza la barrera principal). */
+
 static void destroy_pool(SharedTaskPool* pool){
     pthread_barrier_destroy(&pool->start_barrier);
     pthread_mutex_destroy(&pool->mutex);
 }
+
+/* Destruye los recursos del pool (mutex y barrera). */
 
 static void prepare_thread_data(ThreadData* thread_data , int num_threads , SharedTaskPool* pool){
     for (int i = 0; i < num_threads; i++){
@@ -461,6 +553,8 @@ static void prepare_thread_data(ThreadData* thread_data , int num_threads , Shar
     }
 }
 
+/* Inicializa la estructura `ThreadData` para cada hilo antes de crearlos. */
+
 static int create_workers(pthread_t* threads , ThreadData* thread_data , int num_threads){
     for (int i = 0; i < num_threads; i++){
         if (pthread_create(&threads[i] , NULL , worker_function , &thread_data[i]) != 0){
@@ -471,6 +565,8 @@ static int create_workers(pthread_t* threads , ThreadData* thread_data , int num
 
     return 1;
 }
+
+/* Crea los hilos workers. */
 
 static int join_workers(pthread_t* threads , int num_threads){
     int ok = 1;
@@ -485,6 +581,8 @@ static int join_workers(pthread_t* threads , int num_threads){
     return ok;
 }
 
+/* Espera a que todos los hilos terminen (pthread_join). */
+
 static void reduce_thread_results(const ThreadData* thread_data , int num_threads , NQueenResult* result){
     reset_result(result);
 
@@ -496,6 +594,10 @@ static void reduce_thread_results(const ThreadData* thread_data , int num_thread
 
     finalize_result(result);
 }
+
+/* Reduce (suma) los resultados de todos los hilos en `result` y finaliza
+ * calculando `unique` y `total`.
+ */
 
 static double max_thread_time(const ThreadData* thread_data , int num_threads){
     double max_time = 0.0;
@@ -509,6 +611,10 @@ static double max_thread_time(const ThreadData* thread_data , int num_threads){
     return max_time;
 }
 
+/* Devuelve el tiempo máximo de cómputo entre todos los hilos (útil para
+ * calcular balance de carga local).
+ */
+
 static double avg_thread_time(const ThreadData* thread_data , int num_threads){
     double total_time = 0.0;
 
@@ -519,6 +625,8 @@ static double avg_thread_time(const ThreadData* thread_data , int num_threads){
     return total_time / (double) num_threads;
 }
 
+/* Tiempo promedio de los hilos. */
+
 static int total_tasks_done_threads(const ThreadData* thread_data , int num_threads){
     int total = 0;
 
@@ -528,6 +636,8 @@ static int total_tasks_done_threads(const ThreadData* thread_data , int num_thre
 
     return total;
 }
+
+/* Suma cuántas tareas completó cada hilo (estadística informativa). */
 
 static int parse_args(int argc , char** argv , int rank , int* n , int* num_threads){
     if (argc != 3){
@@ -556,6 +666,10 @@ static int parse_args(int argc , char** argv , int rank , int* n , int* num_thre
 
     return 1;
 }
+
+/* Parsea y valida argumentos: `N` y `nroHilosPorProceso`. Imprime errores
+ * sólo desde `rank==0` para evitar mensajes duplicados en MPI.
+ */
 
 int main(int argc , char** argv){
     int rank;
@@ -744,3 +858,10 @@ int main(int argc , char** argv){
     MPI_Finalize();
     return EXIT_SUCCESS;
 }
+
+/* Programa principal:
+ * - inicializa MPI con soporte de hilos
+ * - genera tareas globales y filtra por rank (mapeo cíclico)
+ * - crea hilos locales (bag-of-tasks) y sincroniza el inicio
+ * - mide tiempo de cómputo y total, reduce resultados y muestra métricas
+ */
