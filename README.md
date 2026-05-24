@@ -1,1 +1,1 @@
-# SistemasDistribuidosyParalelos
+# N-Reinas Hibrido MPI + Pthreads
