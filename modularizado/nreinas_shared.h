@@ -15,16 +15,16 @@ typedef struct {
     int bound1, bound2;
     int lastmask, endbit;
     int initial_board[MAXSIZE];
-} Task;
+} task_t;
 
 // Contenedor de resultados
 typedef struct {
     long long count8;
     long long count4;
     long long count2;
-} ResultTotals;
+} results_t;
 
 // La única función pública del módulo de hilos
-ResultTotals solve_task_batch_with_pthreads(Task* batch, int num_tasks, int num_threads);
+results_t pthreads_batch(task_t* batch, int num_tasks, int num_threads);
 
 #endif

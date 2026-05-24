@@ -15,4 +15,6 @@ Una tarea en este caso sera uno de esos tableros semiprocesados.
 = Tiempos de ejecución, métricas y análisis de escalabilidad
 
 = Uso de inteligencia artificial
-
+1 dio una version en un solo archivo
+2 dio una version con alocacion dinamica que interferia con dwalltime
+3 la solucion tenia un hilo en mpi para que el rank0 compute sin bloquearse, se cambio por una version que usa MPI_probe
