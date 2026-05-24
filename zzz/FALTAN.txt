@@ -1,0 +1,15 @@
+1. todo
+
+2. 
+- está raro que haga un hilo en mpi
+- hacer las funciones de takaken thread safe
+- verificacion, comparar con los resultados del secuencial
+- comentar todo y borrar comentarios de ia
+
+3. que funcione
+
+INFORME
+1. todo
+
+2.
+- explicar por qué no se puede usar una cola
