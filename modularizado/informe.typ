@@ -12,10 +12,7 @@ Esto se hace para balancear mejor la carga, ya que cada tablero puede tomar una 
 
 Una tarea en este caso sera uno de esos tableros semiprocesados.
 
+= Tiempos de ejecución, métricas y análisis de escalabilidad
 
-= ZZZZ
-Una tarea representa una unidad de trabajo, es decir, una parte del cómputo que el algoritmo debe realizar. Las tareas describen qué trabajo debe realizarse, independientemente de si lo ejecuta un hilo, un proceso o de cómo se lleve a cabo la ejecución. En este caso las tareas son dinámicas: no se conocen de antemano y el volumen de trabajo depende de características propias de los datos, no de su tamaño. Las tareas aparecen según la evolución del algoritmo.\
+= Uso de inteligencia artificial
 
-Como las tareas son dinámicas, el número de tareas no se conoce de antemano y aplicar un mapeo estático (distribuir las tareas entre las unidades de procesamiento antes de la ejecución) podría generar desbalance de carga o provocar esperas ociosas.\
-
-La herramienta más adecuada para este caso es Pthreads ya que provee un amplio control sobre la creación y el manejo de los hilos, lo que lo hace más adecuado para paralelismo funcional. OpenMP está pensado para paralelismo de datos.
