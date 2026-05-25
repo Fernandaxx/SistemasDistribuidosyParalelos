@@ -1,0 +1,2 @@
+Rank 0: Tree generated. 1354 tasks created.
+N=18, T=8, Soluciones Totales: 666090624, Soluciones Unicas: 83263591, Tiempo: 24.707919 segundos
