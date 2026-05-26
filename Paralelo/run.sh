@@ -1,9 +1,19 @@
 #!/bin/bash
-#SBATCH -N 2
-#SBATCH --exclusive
-#SBATCH --partition=Blade
-#SBATCH -o /nethome/sdyp18/salidas/output_%j.txt
-#SBATCH -e /nethome/sdyp18/errores/errores_%j.txt
-#SBATCH --time=00:05:00
 
-mpirun --bind-to none ./hibrido $1 $2
+# Define the arrays for your parameters
+N_VALUES=(14 15 16 17 18)
+T_VALUES=(2 4 8)
+
+# Loop through each N value
+for N in "${N_VALUES[@]}"; do
+    # Loop through each T value
+    for T in "${T_VALUES[@]}"; do
+        echo "Submitting job for N=$N, T=$T"
+        sbatch ./nreinas.sh "$N" "$T"
+        
+        # A small delay is still good practice for cluster queues
+        sleep 0.2
+    done
+done
+
+echo "All 15 combinations have been submitted successfully!"

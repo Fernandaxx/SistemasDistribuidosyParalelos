@@ -58,31 +58,57 @@ Una tarea en este caso será uno de esos tableros intermedios.
 
 = Tiempos de ejecución, métricas y análisis de escalabilidad
 == Análisis de tiempos de ejecución
-Se obtuvieron los siguientes tiempos de ejecución, $T_p (P)$.
+Se obtuvieron los siguientes tiempos de ejecución. Para UP=1 se muestran los $T_s$, resultado de ejecutar el algoritmo secuencial. Para el resto, se muestra $T_p (P)$, resultado de ejecutar el algoritmo paralelo desarrollado con la cantidad de hilos necesaria.
 #tabla-carga-UP(
   [*Tiempo de ejecución (s)*],
   // Secuencial
-  [A1], [A2], [A3], [A4], [A5],
+  [0.180785], [1.115655], [7.251938], [50.161116 ], [364.623295 ],
   // UP=4
-  [B1], [B2], [B3], [B4], [B5],
+  [0.066630], [0.154599], [0.640107], [3.673481], [26.171095],
   // UP=8
-  [C1], [C2], [C3], [C4], [C5],
+  [0.065821], [0.211067], [0.749335], [3.513692], [24.979544],
   // UP=16
-  [D1], [D2], [D3], [D4], [D5]
+  [0.092598], [0.209828], [0.712705], [3.790797], [24.869685]
 )
+N=14, Hilos por proceso=2, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.076933 segundos
+N=14, Hilos por proceso=4, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.088005 segundos
+N=14, Hilos por proceso=8, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.075981 segundos
+
+N=15, Hilos por proceso=2, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.195682 segundos
+N=15, Hilos por proceso=4, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.161535 segundos
+N=15, Hilos por proceso=8, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.121733 segundos
+
+N=16, Hilos por proceso=2, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.824400 segundos
+N=16, Hilos por proceso=4, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.806790 segundos
+N=16, Hilos por proceso=8, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.768154 segundos
+
+N=17, Hilos por proceso=2, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=5.269746 segundos
+N=17, Hilos por proceso=4, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=3.850963 segundos
+N=17, Hilos por proceso=8, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=4.075212 segundos
+
+N=18, Hilos por proceso=2, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=37.123807 segundos
+N=18, Hilos por proceso=4, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=26.654250 segundos
+N=18, Hilos por proceso=8, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=27.824918 segundos
+/*
+N=14, Hilos por proceso=1, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.193233 segundos\
+N=15, Hilos por proceso=1, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=1.179760 segundos\
+N=16, Hilos por proceso=1, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=7.672372 segundos\
+N=17, Hilos por proceso=1, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=52.981431 segundos\
+N=18, Hilos por proceso=1, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=384.581845 segundos
+*/
 == Análisis de speedup
 Se calculó la tabla de speedups relativos a partir de los tiempos de ejecución de la siguiente manera:\
-$ S_"rel" (P) = ( T_p (1) )/( T_p (P) ) $
+$ S (P) = ( T_s )/( T_p (P) ) $
 #tabla-carga-UP(
   [*Speedup*],
   // Secuencial
   [1], [1], [1], [1], [1],
   // UP=4
-  [B1], [B2], [B3], [B4], [B5],
+  [2.71], [7.22], [11.33], [13.65], [13.93],
   // UP=8
-  [C1], [C2], [C3], [C4], [C5],
+  [2.75], [5.29], [9.68], [14.28], [14.60],
   // UP=16
-  [D1], [D2], [D3], [D4], [D5]
+  [1.95], [5.31], [10.17], [13.23], [14.66]
 )
 *[ANÁLISIS DE AMDAHL Y GUSTAFSON-BARSIS]*
 == Análisis de escalabilidad
