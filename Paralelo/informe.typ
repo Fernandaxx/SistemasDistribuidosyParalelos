@@ -63,7 +63,19 @@ La comunicación se organiza en dos niveles, siguiendo el modelo híbrido MPI + 
 A nivel intra-nodo se utiliza Pthreads, aprovechando la memoria compartida entre los hilos de un mismo proceso. Los hilos toman tareas desde estructuras compartidas protegidas con mutexes y, en los ranks remotos, se usan variables de condición para avisar la llegada y finalización de lotes. Durante el procesamiento de cada tarea no hay comunicación entre hilos, ya que cada uno trabaja con su propio tablero y sus propios contadores parciales, reduciendo condiciones de carrera, sincronización innecesaria y contención.
 
 == Aglomeración
+
+La decisión principal de aglomeración fue generar tareas a una profundidad fija (y=3) del árbol de búsqueda y almacenarlas en un pool global. Esto evita una granularidad excesivamente fina, donde cada colocación de reina implicaría comunicación o sincronización, y también evita una granularidad demasiado gruesa, donde pocos subárboles grandes podrían producir desbalance.
+
+Cada tarea conserva el estado necesario para continuar el backtracking. Además, para los procesos remotos, las tareas no se envían de a una sino agrupadas en lotes de tamaño máximo BATCH_SIZE, reduciendo la cantidad de mensajes MPI y balanceando el costo de arranque de cada comunicación.
+
+Esta aglomeración también favorece la localidad y reduce la sincronización dentro de cada nodo. Cada hilo procesa una tarea completa usando su propio estado local de tablero y contadores parciales, por lo que durante la exploración del subárbol no necesita actualizar continuamente variables globales compartidas. Los resultados se acumulan localmente y recién se combinan al finalizar, reduciendo contención y accesos compartidos. En los ranks remotos, el proceso recibe un lote por MPI y luego lo reparte entre sus hilos mediante Pthreads, manteniendo el esquema híbrido.
+
+Por lo tanto, la aglomeración elegida establece un compromiso entre overhead y balance de carga. Los lotes permiten disminuir la frecuencia de comunicación entre procesos, mientras que la existencia de múltiples tareas en el pool permite que la asignación posterior siga siendo dinámica. Esto es importante en N-Reinas porque distintos subárboles del backtracking pueden tener costos muy diferentes.
+
+
 == Mapeo
+
+
 
 = Tiempos de ejecución, métricas y análisis de escalabilidad
 == Análisis de tiempos de ejecución
