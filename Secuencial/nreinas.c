@@ -191,7 +191,7 @@ int main(int argC , char* argV[]){
     NQueens();
     tFin = dwalltime();
 
-    printf("Número de resultados: %lu -  Tiempo Total: %f segundos \n" , TOTAL , tFin - tIni);
+    printf("Número de resultados: %lu - Soluciones únicas: %lu - Tiempo Total: %f segundos \n" , TOTAL , UNIQUE, tFin - tIni);
     return 0;
 }
 

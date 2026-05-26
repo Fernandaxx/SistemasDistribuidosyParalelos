@@ -70,25 +70,7 @@ Se obtuvieron los siguientes tiempos de ejecución. Para UP=1 se muestran los $T
   // UP=16
   [0.092598], [0.209828], [0.712705], [3.790797], [24.869685]
 )
-N=14, Hilos por proceso=2, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.076933 segundos
-N=14, Hilos por proceso=4, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.088005 segundos
-N=14, Hilos por proceso=8, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.075981 segundos
 
-N=15, Hilos por proceso=2, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.195682 segundos
-N=15, Hilos por proceso=4, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.161535 segundos
-N=15, Hilos por proceso=8, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=0.121733 segundos
-
-N=16, Hilos por proceso=2, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.824400 segundos
-N=16, Hilos por proceso=4, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.806790 segundos
-N=16, Hilos por proceso=8, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=0.768154 segundos
-
-N=17, Hilos por proceso=2, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=5.269746 segundos
-N=17, Hilos por proceso=4, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=3.850963 segundos
-N=17, Hilos por proceso=8, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=4.075212 segundos
-
-N=18, Hilos por proceso=2, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=37.123807 segundos
-N=18, Hilos por proceso=4, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=26.654250 segundos
-N=18, Hilos por proceso=8, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=27.824918 segundos
 /*
 N=14, Hilos por proceso=1, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.193233 segundos\
 N=15, Hilos por proceso=1, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=1.179760 segundos\
