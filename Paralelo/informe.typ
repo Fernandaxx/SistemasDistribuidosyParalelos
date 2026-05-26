@@ -34,12 +34,15 @@
 
 = Descripción del algoritmo secuencial
 El algoritmo secuencial implementa una solución para el problema de las N-Reinas utilizando Backtracking y operaciones a nivel de bits para optimizar los cálculos.
+
 == Representación de los elementos
 Se representa el tablero utilizando un arreglo de enteros donde cada índice del arreglo representa una fila del tablero y el valor almacenado en cada posición se interpreta como una máscara de bits. En cada número entero, un bit en 1 indica la columna donde se encuentra la reina de esa fila, mientras que los bits en 0 representan las casillas vacías.
+
 == Estrategia para determinar si un tablero es válido
 El algoritmo construye las soluciones garantizando que cada nueva reina agregada esté en una posición segura. Para esto, mantiene las variables down, left y right, que se actualizan en cada llamada a las funciones recursivas para tener un registro de las posiciones que están amenazadas por las reinas de las filas anteriores y, por lo tanto, son inválidas.\
 Las posiciones válidas para la fila actual se marcan con un 1 en la variable bitmap, la cuál se calcula a partir de las variables down, left y right.\
 Además de generar únicamente tableros que cumplen las condiciones del problema de las N-Reinas, también se descartan todos los tableros que sean rotaciones o espejos de soluciones ya encontradas. Esto se logra limitando las columnas iniciales evaluadas en la primera fila (con variables como BOUND1) y utilizando la función Check() para reconocer simetrías.
+
 == Almacenamiento de resultados y contabilización
 El arreglo BOARD se sobrescribe continuamente a medida que el algoritmo se ejecuta. Para llevar el registro de los tableros válidos, se utilizan contadores según la simetría de la solución hallada.\
 Si una solución puede rotarse 90, 180 y 270 grados, luego espejarse y realizar las mismas rotaciones y que en los ocho casos las soluciones sean diferentes, entonces se suma a COUNT8. Puede suceder que alguna de estas rotaciones resulte en un tablero idéntico al que se tiene, y es en estos casos que se utilizan COUNT4 Y COUNT2, según el nivel de simetría.\
@@ -47,35 +50,27 @@ Finalmente, el número total de tableros válidos se calcula multiplicando cada 
 
 = Estrategia y descripción de las etapas de diseño paralelo
 == Descomposición
+
 La estrategia de descomposición más adecuada es la de *descomposición exploratoria*, ya que la estructura del problema no se conoce completamente al inicio y evoluciona durante la ejecución, explorando un espacio de soluciones posibles. La descomposición progresa dinámicamente: a medida que se explora el espacio de búsqueda se generan nuevas tareas, lo que hace que el paralelismo no esté completamente definido desde el comienzo.\
-En este caso, se optó por que el proceso con rank 0 realice las primeras iteraciones del algoritmo, creando tareas que luego los otros procesos puedan tomar y distribuir entre sus hilos.
-Esto se hace para balancear mejor la carga, ya que cada tablero puede requerir una cantidad de operaciones muy diferente.
-
+En este caso, se optó por que el proceso con rank 0 realice las primeras iteraciones del algoritmo, creando tareas que luego los otros procesos puedan tomar y distribuir entre sus hilos. Esto se hace para balancear mejor la carga, ya que cada tablero puede requerir una cantidad de operaciones muy diferente.\
 Una tarea en este caso será uno de esos tableros intermedios.
+
 == Comunicación
-
-En este problema, cada tarea representa un subárbol del backtracking y, una vez que recibe su estado inicial, puede ejecutarse de manera independiente. Por eso, la comunicación no ocurre durante el cómputo interno de cada tarea, sino principalmente para distribuir trabajo y devolver resultados parciales.
-
-
-La comunicación se organiza en dos niveles, siguiendo el modelo híbrido MPI + Pthreads. A nivel inter-nodo se utiliza MPI, mediante una comunicación explícita por pasaje de mensajes, punto a punto, centralizada y dinámica bajo demanda. El rank 0 actúa como master, administra el pool global de tareas y entrega lotes a los ranks trabajadores cuando estos los solicitan. Cuando no quedan tareas, envía un lote vacío como señal de finalización, y al terminar cada rank trabajador devuelve sus contadores parciales.
-
-
+En este problema, cada tarea representa un subárbol del backtracking y, una vez que recibe su estado inicial, puede ejecutarse de manera independiente. Por eso, la comunicación no ocurre durante el cómputo interno de cada tarea, sino principalmente para distribuir trabajo y devolver resultados parciales.\
+La comunicación se organiza en dos niveles, siguiendo el modelo híbrido MPI + Pthreads. A nivel inter-nodo se utiliza MPI, mediante una comunicación explícita por pasaje de mensajes, punto a punto, centralizada y dinámica bajo demanda. El rank 0 actúa como master, administra el pool global de tareas y entrega lotes a los ranks trabajadores cuando estos los solicitan. Cuando no quedan tareas, envía un lote vacío como señal de finalización, y al terminar cada rank trabajador devuelve sus contadores parciales.\
 A nivel intra-nodo se utiliza Pthreads, aprovechando la memoria compartida entre los hilos de un mismo proceso. Los hilos toman tareas desde estructuras compartidas protegidas con mutexes y, en los ranks remotos, se usan variables de condición para avisar la llegada y finalización de lotes. Durante el procesamiento de cada tarea no hay comunicación entre hilos, ya que cada uno trabaja con su propio tablero y sus propios contadores parciales, reduciendo condiciones de carrera, sincronización innecesaria y contención.
 
 == Aglomeración
-
-La decisión principal de aglomeración fue generar tareas a una profundidad fija (y=3) del árbol de búsqueda y almacenarlas en un pool global. Esto evita una granularidad excesivamente fina, donde cada colocación de reina implicaría comunicación o sincronización, y también evita una granularidad demasiado gruesa, donde pocos subárboles grandes podrían producir desbalance.
-
-Cada tarea conserva el estado necesario para continuar el backtracking. Además, para los procesos remotos, las tareas no se envían de a una sino agrupadas en lotes de tamaño máximo BATCH_SIZE, reduciendo la cantidad de mensajes MPI y balanceando el costo de arranque de cada comunicación.
-
-Esta aglomeración también favorece la localidad y reduce la sincronización dentro de cada nodo. Cada hilo procesa una tarea completa usando su propio estado local de tablero y contadores parciales, por lo que durante la exploración del subárbol no necesita actualizar continuamente variables globales compartidas. Los resultados se acumulan localmente y recién se combinan al finalizar, reduciendo contención y accesos compartidos. En los ranks remotos, el proceso recibe un lote por MPI y luego lo reparte entre sus hilos mediante Pthreads, manteniendo el esquema híbrido.
-
+La decisión principal de aglomeración fue generar tareas a una profundidad fija (y=3) del árbol de búsqueda y almacenarlas en un pool global. Esto evita una granularidad excesivamente fina, donde cada colocación de reina implicaría comunicación o sincronización, y también evita una granularidad demasiado gruesa, donde pocos subárboles grandes podrían producir desbalance.\
+Cada tarea conserva el estado necesario para continuar el backtracking. Además, para los procesos remotos, las tareas no se envían de a una sino agrupadas en lotes de tamaño máximo BATCH_SIZE, reduciendo la cantidad de mensajes MPI y balanceando el costo de arranque de cada comunicación.\
+Esta aglomeración también favorece la localidad y reduce la sincronización dentro de cada nodo. Cada hilo procesa una tarea completa usando su propio estado local de tablero y contadores parciales, por lo que durante la exploración del subárbol no necesita actualizar continuamente variables globales compartidas. Los resultados se acumulan localmente y recién se combinan al finalizar, reduciendo contención y accesos compartidos. En los ranks remotos, el proceso recibe un lote por MPI y luego lo reparte entre sus hilos mediante Pthreads, manteniendo el esquema híbrido.\
 Por lo tanto, la aglomeración elegida establece un compromiso entre overhead y balance de carga. Los lotes permiten disminuir la frecuencia de comunicación entre procesos, mientras que la existencia de múltiples tareas en el pool permite que la asignación posterior siga siendo dinámica. Esto es importante en N-Reinas porque distintos subárboles del backtracking pueden tener costos muy diferentes.
 
-
 == Mapeo
-
-
+En esta implementación se utilizó una estrategia de mapeo dinámico centralizado. El proceso master es el encargado de generar las tareas y distribuirlas entre los distintos nodos de cómputo. Cada vez que un nodo finaliza el conjunto de tareas asignadas, solicita nuevas tareas al master, quien entrega más trabajo mientras queden tareas disponibles.\
+Dentro de cada nodo, la ejecución también se realiza de manera dinámica. Las tareas recibidas se almacenan en una vector compartido local, desde el cual los distintos hilos de ejecución extraen trabajo hasta que se vacíe. Una vez que todas las tareas locales fueron procesadas, el nodo vuelve a solicitar nuevas tareas.\
+Este esquema combina dos niveles de distribución dinámica: uno global, de tipo "Master-Worker", y otro local, de tipo "Bag of tasks". De esta forma se logra un mejor balance de carga, ya que las unidades de procesamiento que terminan antes continúan obteniendo trabajo mientras existan tareas pendientes.\
+Además, el uso de vectores locales reduce la frecuencia de comunicación con el master, disminuyendo en parte overhead de coordinación global. Esto permite aprovechar mejor los recursos compartidos dentro de cada nodo y reduce el tiempo en el que las unidades de procesamiento permanecen ociosas.
 
 = Tiempos de ejecución, métricas y análisis de escalabilidad
 == Análisis de tiempos de ejecución
@@ -140,6 +135,7 @@ Cuando analizamos N=14 podemos ver que, a pesar de que se obtenían mayor tiempo
 Para el resto de las cargas, se puede analizar escalabilidad fuerte y escalabilidad débil.\
 Un programa paralelo es *fuertemente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar el número de unidades de procesamiento sin aumentar el tamaño del problema. Para analizar esta escalabilidad entonces, miramos las columnas de la tabla. En todos los casos para N entre 15 y 18 se puede observar que la eficiencia se mantiene aproximadamente constante, por lo que el algoritmo es fuertemente escalable para estas cargas.\
 Un programa paralelo es *débilmente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar simultáneamente el número de unidades de procesamiento y el tamaño del problema. Por lo tanto, observamos las diagonales de la tabla. Si observamos la diagonal que va desde N=16 a N=18, vemos que la eficiencia se mantiene aproximadamente constante (0,70 - 0,84 - 0,86). Si, en cambio, observamos la diagonal que va de N=15 a N=17, podemos ver que la eficiencia continúa aumentando (0,68 - 0,80 - 0.88). Esto es incluso mejor que mantenerse constante, ya que significa que la utilización de los recursos no solo no disminuye sino que mejora. Ambos casos son, entonces, débilmente escalables.
+
 = Uso de inteligencia artificial
 #table(
   columns: (1fr, 1fr, 1fr),
