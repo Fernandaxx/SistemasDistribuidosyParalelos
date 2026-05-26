@@ -6,29 +6,29 @@
   let celdas-dinamicas = datos.pos()
   let filas-completas = ()
   let valores-col1 = (1, 4, 8, 16)
-  
+
   for (i, grupo) in celdas-dinamicas.chunks(5).enumerate() {
     let valor-actual = valores-col1.at(i, default: "-")
     filas-completas.push(table.cell(fill: color-fijos)[*#valor-actual*])
-    
+
     for celda in grupo {
       filas-completas.push(celda)
     }
   }
 
   table(
-    columns: (auto, 1fr, 1fr, 1fr, 1fr, 1fr), 
+    columns: (auto, 1fr, 1fr, 1fr, 1fr, 1fr),
     align: center,
-    celda-1, 
+    celda-1,
     table.cell(colspan: 5, fill: color-titulos)[*CARGA (N)*],
-    table.cell(fill: color-titulos)[*UP*], 
-    table.cell(fill: color-fijos)[*14*], 
-    table.cell(fill: color-fijos)[*15*], 
-    table.cell(fill: color-fijos)[*16*], 
-    table.cell(fill: color-fijos)[*17*], 
+    table.cell(fill: color-titulos)[*UP*],
+    table.cell(fill: color-fijos)[*14*],
+    table.cell(fill: color-fijos)[*15*],
+    table.cell(fill: color-fijos)[*16*],
+    table.cell(fill: color-fijos)[*17*],
     table.cell(fill: color-fijos)[*18*],
-    
-    ..filas-completas
+
+    ..filas-completas,
   )
 }
 
@@ -53,6 +53,15 @@ Esto se hace para balancear mejor la carga, ya que cada tablero puede requerir u
 
 Una tarea en este caso será uno de esos tableros intermedios.
 == Comunicación
+
+En este problema, cada tarea representa un subárbol del backtracking y, una vez que recibe su estado inicial, puede ejecutarse de manera independiente. Por eso, la comunicación no ocurre durante el cómputo interno de cada tarea, sino principalmente para distribuir trabajo y devolver resultados parciales.
+
+
+La comunicación se organiza en dos niveles, siguiendo el modelo híbrido MPI + Pthreads. A nivel inter-nodo se utiliza MPI, mediante una comunicación explícita por pasaje de mensajes, punto a punto, centralizada y dinámica bajo demanda. El rank 0 actúa como master, administra el pool global de tareas y entrega lotes a los ranks trabajadores cuando estos los solicitan. Cuando no quedan tareas, envía un lote vacío como señal de finalización, y al terminar cada rank trabajador devuelve sus contadores parciales.
+
+
+A nivel intra-nodo se utiliza Pthreads, aprovechando la memoria compartida entre los hilos de un mismo proceso. Los hilos toman tareas desde estructuras compartidas protegidas con mutexes y, en los ranks remotos, se usan variables de condición para avisar la llegada y finalización de lotes. Durante el procesamiento de cada tarea no hay comunicación entre hilos, ya que cada uno trabaja con su propio tablero y sus propios contadores parciales, reduciendo condiciones de carrera, sincronización innecesaria y contención.
+
 == Aglomeración
 == Mapeo
 
@@ -62,13 +71,29 @@ Se obtuvieron los siguientes tiempos de ejecución. Para UP=1 se muestran los $T
 #tabla-carga-UP(
   [*Tiempo de ejecución (s)*],
   // Secuencial
-  [0.180785], [1.115655], [7.251938], [50.161116 ], [364.623295 ],
+  [0.180785],
+  [1.115655],
+  [7.251938],
+  [50.161116 ],
+  [364.623295 ],
   // UP=4
-  [0.066630], [0.154599], [0.640107], [3.673481], [26.171095],
+  [0.066630],
+  [0.154599],
+  [0.640107],
+  [3.673481],
+  [26.171095],
   // UP=8
-  [0.065821], [0.211067], [0.749335], [3.513692], [24.979544],
+  [0.065821],
+  [0.211067],
+  [0.749335],
+  [3.513692],
+  [24.979544],
   // UP=16
-  [0.092598], [0.209828], [0.712705], [3.790797], [24.869685]
+  [0.092598],
+  [0.209828],
+  [0.712705],
+  [3.790797],
+  [24.869685],
 )
 N=14, Hilos por proceso=2, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.076933 segundos
 N=14, Hilos por proceso=4, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.088005 segundos
@@ -102,13 +127,29 @@ $ S (P) = ( T_s )/( T_p (P) ) $
 #tabla-carga-UP(
   [*Speedup*],
   // Secuencial
-  [1], [1], [1], [1], [1],
+  [1],
+  [1],
+  [1],
+  [1],
+  [1],
   // UP=4
-  [2.71], [7.22], [11.33], [13.65], [13.93],
+  [2.71],
+  [7.22],
+  [11.33],
+  [13.65],
+  [13.93],
   // UP=8
-  [2.75], [5.29], [9.68], [14.28], [14.60],
+  [2.75],
+  [5.29],
+  [9.68],
+  [14.28],
+  [14.60],
   // UP=16
-  [1.95], [5.31], [10.17], [13.23], [14.66]
+  [1.95],
+  [5.31],
+  [10.17],
+  [13.23],
+  [14.66],
 )
 *[ANÁLISIS DE AMDAHL Y GUSTAFSON-BARSIS]*
 == Análisis de escalabilidad
@@ -117,28 +158,48 @@ $ E(P) = ( S(P) )/P $
 #tabla-carga-UP(
   [*Eficiencia*],
   // Secuencial
-  [1], [1], [1], [1], [1],
+  [1],
+  [1],
+  [1],
+  [1],
+  [1],
   // UP=4
-  [B1], [B2], [B3], [B4], [B5],
+  [B1],
+  [B2],
+  [B3],
+  [B4],
+  [B5],
   // UP=8
-  [C1], [C2], [C3], [C4], [C5],
+  [C1],
+  [C2],
+  [C3],
+  [C4],
+  [C5],
   // UP=16
-  [D1], [D2], [D3], [D4], [D5]
+  [D1],
+  [D2],
+  [D3],
+  [D4],
+  [D5],
 )
 *[ANÁLISIS DE ESCALABILIDAD]*
 = Uso de inteligencia artificial
 #table(
-  columns: (1fr, 1fr, 1fr), 
-  align: center, 
+  columns: (1fr, 1fr, 1fr),
+  align: center,
   table.cell(colspan: 3, fill: color-titulos)[#text(white)[*Herramienta: Gemini*]],
   table.header(
-    table.cell(fill: color-fijos)[*PROMPT*], 
-    table.cell(fill: color-fijos)[*ÉXITO*], 
-    table.cell(fill: color-fijos)[*OBSERVACIÓN*]
+    table.cell(fill: color-fijos)[*PROMPT*],
+    table.cell(fill: color-fijos)[*ÉXITO*],
+    table.cell(fill: color-fijos)[*OBSERVACIÓN*],
   ),
-  [],[Parcial],[Dio una versión en un solo archivo.],
-  [],[Parcial],[Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
-  [],[Parcial],[La solución tenía un hilo en mpi para que el rank0 compute sin bloquearse, se cambió por una versión que usa MPI_probe.],
-  [],[Si],[],
-  [],[],[],
+  [], [Parcial], [Dio una versión en un solo archivo.],
+  [],
+  [Parcial],
+  [Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
+  [],
+  [Parcial],
+  [La solución tenía un hilo en mpi para que el rank0 compute sin bloquearse, se cambió por una versión que usa MPI_probe.],
+  [], [Si], [],
+  [], [], [],
 )
