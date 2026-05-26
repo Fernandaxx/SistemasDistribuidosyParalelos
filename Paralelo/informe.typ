@@ -71,100 +71,66 @@ Se obtuvieron los siguientes tiempos de ejecución. Para UP=1 se muestran los $T
 #tabla-carga-UP(
   [*Tiempo de ejecución (s)*],
   // Secuencial
-  [0.180785],
-  [1.115655],
-  [7.251938],
-  [50.161116 ],
-  [364.623295 ],
+  [0.180799], [1.114150], [7.252414], [51.850495], [364.626777],
   // UP=4
-  [0.066630],
-  [0.154599],
-  [0.640107],
-  [3.673481],
-  [26.171095],
+  [0.077322], [0.407687], [2.589023], [17.822687], [129.300311],
   // UP=8
-  [0.065821],
-  [0.211067],
-  [0.749335],
-  [3.513692],
-  [24.979544],
+  [0.041199], [0.184199], [1.132308], [7.703234], [55.764344],
   // UP=16
-  [0.092598],
-  [0.209828],
-  [0.712705],
-  [3.790797],
-  [24.869685],
+  [0.029512], [0.096900], [0.546728], [3.676072], [26.567920],
 )
-
+Para los tamaños de tableros menores, el algoritmo paralelo ya muestra mejoras respecto de la versión secuencial, aunque el beneficio obtenido es relativamente bajo.\
+A medida que aumenta el tamaño del problema, el paralelismo se aprovecha mejor. En los casos con 8 y 16 unidades de procesamiento, los tiempos de ejecución disminuyen considerablemente respecto de la versión secuencial.
 /*
-N=14, Hilos por proceso=1, Soluciones Totales=365596, Soluciones Unicas=45752, Tiempo=0.193233 segundos\
-N=15, Hilos por proceso=1, Soluciones Totales=2279184, Soluciones Unicas=285053, Tiempo=1.179760 segundos\
-N=16, Hilos por proceso=1, Soluciones Totales=14772512, Soluciones Unicas=1846955, Tiempo=7.672372 segundos\
-N=17, Hilos por proceso=1, Soluciones Totales=95815104, Soluciones Unicas=11977939, Tiempo=52.981431 segundos\
-N=18, Hilos por proceso=1, Soluciones Totales=666090624, Soluciones Unicas=83263591, Tiempo=384.581845 segundos
+Número de resultados: 365596 - Soluciones únicas: 45752  
+N=14, Totales=365596, Unicas=45752
+Número de resultados: 2279184 - Soluciones únicas: 285053  
+N=15, Totales=2279184, Unicas=285053
+Número de resultados: 14772512 - Soluciones únicas: 1846955  
+N=16, Totales=14772512, Unicas=1846955
+Número de resultados: 95815104 - Soluciones únicas: 11977939  
+N=17, Totales=95815104, Unicas=11977939
+Número de resultados: 666090624 - Soluciones únicas: 83263591
+N=18, Totales=666090624, Unicas=83263591
 */
 == Análisis de speedup
-Se calculó la tabla de speedups relativos a partir de los tiempos de ejecución de la siguiente manera:\
+Se calculó la tabla de speedups  a partir de los tiempos de ejecución de la siguiente manera:\
 $ S (P) = ( T_s )/( T_p (P) ) $
 #tabla-carga-UP(
   [*Speedup*],
-  // Secuencial
-  [1],
-  [1],
-  [1],
-  [1],
-  [1],
+  [1], [1], [1], [1], [1],
   // UP=4
-  [2.71],
-  [7.22],
-  [11.33],
-  [13.65],
-  [13.93],
+  [2.34], [2.73], [2.80], [2.91], [2.82],
   // UP=8
-  [2.75],
-  [5.29],
-  [9.68],
-  [14.28],
-  [14.60],
+  [4.39], [6.05], [6.40], [6.73], [6.54],
   // UP=16
-  [1.95],
-  [5.31],
-  [10.17],
-  [13.23],
-  [14.66],
+  [6.13], [11.50], [13.26], [14.11], [13.72],
 )
-*[ANÁLISIS DE AMDAHL Y GUSTAFSON-BARSIS]*
+
+Para todos los escenarios evaluados, el speedup obtenido es mayor que 1, lo que indica que el algoritmo paralelo logra mejorar el rendimiento respecto de la versión secuencial incluso para los tamaños de problema más chicos. Sin embargo, para cargas menores, las mejoras observadas son moderadas y el speedup se encuentra bastante alejado del ideal. Para N=14 se observa que, si bien el tiempo de ejecución mejoraba, no es una mejora significativa ya que el speedup no se acerca al ideal. Esto se debe a que, para tamaños de problema chicos, el overhead de comunicación sigue siendo significativo frente al tiempo de cómputo.\
+A medida que aumenta el tamaño del problema, y para una cantidad fija de unidades de procesamiento, el speedup mejora considerablemente y comienza a acercarse al valor ideal. Este comportamiento concuerda con la ley de Gustafson-Barsis. Para una cantidad fija de unidades de procesamiento, al incrementar el tamaño del problema el speedup crece y se aproxima cada vez más al ideal. Esto puede observarse claramente en las ejecuciones con 16 unidades de procesamiento, donde el speedup es cada vez más significativo a medida que aumenta la carga de trabajo.\
+Para las cargas analizadas, los límites impuestos por la ley de Amdahl no se perciben. Si observamos cualquier columna de la tabla, no se ve un estancamiento en el valor del speedup. Esto significa que podemos agregar más unidades de procesamiento, ya que todavía podríamos mejorar el tiempo de ejecución.
 == Análisis de escalabilidad
 Se calculó la tabla de eficiencia a partir de la tabla de speedup, para poder analizar la escalabilidad del algoritmo. Para esto se usó la relación:\
 $ E(P) = ( S(P) )/P $
 #tabla-carga-UP(
   [*Eficiencia*],
   // Secuencial
-  [1],
-  [1],
-  [1],
-  [1],
-  [1],
+  [1], [1], [1], [1], [1],
   // UP=4
-  [B1],
-  [B2],
-  [B3],
-  [B4],
-  [B5],
+  [0.59], [0.68], [0.70], [0.73], [0.70],
   // UP=8
-  [C1],
-  [C2],
-  [C3],
-  [C4],
-  [C5],
+  [0.55], [0.76], [0.80], [0.84], [0.82],
   // UP=16
-  [D1],
-  [D2],
-  [D3],
-  [D4],
-  [D5],
+  [0.38], [0.72], [0.83], [0.88], [0.86],
 )
-*[ANÁLISIS DE ESCALABILIDAD]*
+Cuando analizamos N=14 podemos ver que, a pesar de que se obtenían mayor tiempo de ejecución y speedup al aumentar la cantidad de unidades de procesamiento, en realidad se están aprovechando cada vez menos los recursos. La paralelización sí aporta beneficios, pero implica un consumo innecesario de recursos y energía.\
+Para el resto de las cargas, se puede analizar escalabilidad fuerte y escalabilidad débil.\
+Un programa paralelo es *fuertemente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar el número de unidades de procesamiento sin aumentar el tamaño del problema. Para analizar esta escalabilidad entonces, miramos las columnas de la tabla. En todos los casos para N entre 15 y 18 se puede observar que la eficiencia se mantiene aproximadamente constante, por lo que el algoritmo es fuertemente escalable para estas cargas.\
+Un programa paralelo es *débilmente escalable*(o simplemente escalable) si la eficiencia se
+mantiene aproximadamente constante al incrementar
+simultáneamente el número de unidades de procesamiento y
+el tamaño del problema.
 = Uso de inteligencia artificial
 #table(
   columns: (1fr, 1fr, 1fr),

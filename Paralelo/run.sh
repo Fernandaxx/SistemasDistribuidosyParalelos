@@ -5,7 +5,7 @@ N_VALUES=(14 15 16 17 18)
 T_VALUES=(2 4 8)
 
 # Loop through each N value
-for N in "${N_VALUES[@]}"; do
+for  in "${N_VALUES[@]}"; do
     # Loop through each T value
     for T in "${T_VALUES[@]}"; do
         echo "Submitting job for N=$N, T=$T"
@@ -15,5 +15,3 @@ for N in "${N_VALUES[@]}"; do
         sleep 0.2
     done
 done
-
-echo "All 15 combinations have been submitted successfully!"
