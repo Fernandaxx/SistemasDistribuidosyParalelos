@@ -52,8 +52,8 @@ Finalmente, el número total de tableros válidos se calcula multiplicando cada 
 == Descomposición
 
 La estrategia de descomposición más adecuada es la de *descomposición exploratoria*, ya que la estructura del problema no se conoce completamente al inicio y evoluciona durante la ejecución, explorando un espacio de soluciones posibles. La descomposición progresa dinámicamente: a medida que se explora el espacio de búsqueda se generan nuevas tareas, lo que hace que el paralelismo no esté completamente definido desde el comienzo.\
-En este caso, se optó por que el proceso con rank 0 realice las primeras iteraciones del algoritmo, creando tareas que luego los otros procesos puedan tomar y distribuir entre sus hilos. Esto se hace para balancear mejor la carga, ya que cada tablero puede requerir una cantidad de operaciones muy diferente.\
-Una tarea en este caso será uno de esos tableros intermedios.
+En este caso, se optó por que el proceso con rank 0 realice las primeras iteraciones del algoritmo, creando tareas que luego los otros procesos puedan tomar y distribuir entre sus hilos. Esto se hace para balancear mejor la carga, ya que cada tablero puede requerir una cantidad de operaciones muy diferente. Una tarea en este caso es, entonces, uno de esos tableros intermedios.\
+Todos los tableros son independientes entre sí, por lo que no hay dependencias entre las tareas generadas.
 
 == Comunicación
 En este problema, cada tarea representa un subárbol del backtracking y, una vez que recibe su estado inicial, puede ejecutarse de manera independiente. Por eso, la comunicación no ocurre durante el cómputo interno de cada tarea, sino principalmente para distribuir trabajo y devolver resultados parciales.\
