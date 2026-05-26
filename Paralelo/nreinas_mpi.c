@@ -194,17 +194,14 @@ void f0(int num_nodes , double tIni){
         grand_totals.count2 += remote_totals.count2;
     }
 
+    long long UNIQUE = grand_totals.count8 + grand_totals.count4 + grand_totals.count2;
+    long long TOTAL = (grand_totals.count8 * 8) + (grand_totals.count4 * 4) + (grand_totals.count2 * 2);
+    
     double tFin = dwalltime();
-
-    long long UNIQUE_SOLS = grand_totals.count8 + grand_totals.count4 + grand_totals.count2;
-
-
-    long long TOTAL_SOLS = (grand_totals.count8 * 8) + (grand_totals.count4 * 4) + (grand_totals.count2 * 2);
-
 
     printf("Tareas generadas: %d\n" , total_tasks_generated);
     printf("N=%d, Hilos por proceso=%d, Soluciones Totales=%lld, Soluciones Unicas=%lld, Tiempo=%f segundos\n" ,
-        SIZE , NUM_THREADS , TOTAL_SOLS , UNIQUE_SOLS , tFin - tIni
+        SIZE , NUM_THREADS , TOTAL , UNIQUE , tFin - tIni
     );
 }
 
