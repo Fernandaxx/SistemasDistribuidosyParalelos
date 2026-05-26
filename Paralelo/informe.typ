@@ -139,10 +139,7 @@ $ E(P) = ( S(P) )/P $
 Cuando analizamos N=14 podemos ver que, a pesar de que se obtenían mayor tiempo de ejecución y speedup al aumentar la cantidad de unidades de procesamiento, en realidad se están aprovechando cada vez menos los recursos. La paralelización sí aporta beneficios, pero implica un consumo innecesario de recursos y energía.\
 Para el resto de las cargas, se puede analizar escalabilidad fuerte y escalabilidad débil.\
 Un programa paralelo es *fuertemente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar el número de unidades de procesamiento sin aumentar el tamaño del problema. Para analizar esta escalabilidad entonces, miramos las columnas de la tabla. En todos los casos para N entre 15 y 18 se puede observar que la eficiencia se mantiene aproximadamente constante, por lo que el algoritmo es fuertemente escalable para estas cargas.\
-Un programa paralelo es *débilmente escalable*(o simplemente escalable) si la eficiencia se
-mantiene aproximadamente constante al incrementar
-simultáneamente el número de unidades de procesamiento y
-el tamaño del problema.
+Un programa paralelo es *débilmente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar simultáneamente el número de unidades de procesamiento y el tamaño del problema. Por lo tanto, observamos las diagonales de la tabla. Si observamos la diagonal que va desde N=16 a N=18, vemos que la eficiencia se mantiene aproximadamente constante (0,70 - 0,84 - 0,86). Si, en cambio, observamos la diagonal que va de N=15 a N=17, podemos ver que la eficiencia continúa aumentando (0,68 - 0,80 - 0.88). Esto es incluso mejor que mantenerse constante, ya que significa que la utilización de los recursos no solo no disminuye sino que mejora. Ambos casos son, entonces, débilmente escalables.
 = Uso de inteligencia artificial
 #table(
   columns: (1fr, 1fr, 1fr),
