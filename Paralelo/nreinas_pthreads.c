@@ -39,8 +39,7 @@ void ProcesarTarea(task_t* task , ThreadState* state){
 
     if (task->is_backtrack1){
         Backtrack1(task->y , task->left , task->down , task->right , task , state);
-    }
-    else{
+    } else{
         Backtrack2(task->y , task->left , task->down , task->right , task , state);
     }
 }
