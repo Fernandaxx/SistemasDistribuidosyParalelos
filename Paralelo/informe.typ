@@ -180,6 +180,7 @@ $ S (P) = ( T_s )/( T_p (P) ) $
 Para todos los escenarios evaluados, el speedup obtenido es mayor que 1, lo que indica que el algoritmo paralelo logra mejorar el rendimiento respecto de la versión secuencial incluso para los tamaños de problema más chicos. Sin embargo, para cargas menores, las mejoras observadas son moderadas y el speedup se encuentra bastante alejado del ideal. Para N=14 se observa que, si bien el tiempo de ejecución mejoraba, no es una mejora significativa ya que el speedup no se acerca al ideal. Esto se debe a que, para tamaños de problema chicos, el overhead de comunicación sigue siendo significativo frente al tiempo de cómputo.\
 A medida que aumenta el tamaño del problema, y para una cantidad fija de unidades de procesamiento, el speedup mejora considerablemente y comienza a acercarse al valor ideal. Este comportamiento concuerda con la ley de Gustafson-Barsis. Para una cantidad fija de unidades de procesamiento, al incrementar el tamaño del problema el speedup crece y se aproxima cada vez más al ideal. Esto puede observarse claramente en las ejecuciones con 16 unidades de procesamiento, donde el speedup es cada vez más significativo a medida que aumenta la carga de trabajo.\
 Para las cargas analizadas, los límites impuestos por la ley de Amdahl no se perciben. Si observamos cualquier columna de la tabla, no se ve un estancamiento en el valor del speedup. Esto significa que podemos agregar más unidades de procesamiento, ya que todavía podríamos mejorar el tiempo de ejecución.
+
 == Análisis de escalabilidad
 Se calculó la tabla de eficiencia a partir de la tabla de speedup, para poder analizar la escalabilidad del algoritmo. Para esto se usó la relación:\
 $ E(P) = ( S(P) )/P $
@@ -221,8 +222,10 @@ El balance de carga se calculó según la relación:
 
 $ B = ("Promedio" (T)) / ("Máximo" (T)) $
 
-donde $"Promedio" (T)$ representa el promedio de los tiempos de ejecución de los hilos y $"Máximo" (T)$ representa el tiempo del hilo que más tardó. Esta métrica permite evaluar qué tan equitativamente se distribuyó el trabajo entre las unidades de procesamiento. Un valor cercano a 1 indica una distribución equilibrada, mientras que valores más bajos indican mayor desbalance.
-
+donde $"Promedio" (T)$ representa el promedio de los tiempos de ejecución de los hilos y $"Máximo" (T)$ representa el tiempo del hilo que más tardó. Esta métrica permite evaluar qué tan equitativamente se distribuyó el trabajo entre las unidades de procesamiento. Un valor cercano a 1 indica una distribución equilibrada, mientras que valores más bajos indican mayor desbalance.\
+\
+\
+\
 #tabla-carga-UP(
   [*Balance de carga*],
   // Secuencial
@@ -254,6 +257,7 @@ donde $"Promedio" (T)$ representa el promedio de los tiempos de ejecución de lo
 Los resultados muestran que el balance de carga es alto en la mayoría de las ejecuciones. Para 4 unidades de procesamiento, el balance se mantiene siempre por encima de 0.97, lo que indica una distribución muy pareja del trabajo. Para 8 unidades de procesamiento también se observa un buen comportamiento, con valores superiores a 0.95 y cercanos a 0.99 en las cargas más grandes.
 
 El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde el balance baja a 0.770. Esto se explica porque la carga de trabajo es pequeña en relación con la cantidad de hilos disponibles: al haber más unidades de procesamiento, el costo de coordinación y la irregularidad de los subárboles del backtracking tienen mayor peso relativo. Sin embargo, a medida que aumenta N, el balance mejora progresivamente hasta alcanzar 0.969 para N=18. Esto confirma que la estrategia de distribución dinámica de tareas resulta adecuada para este problema, ya que permite compensar parcialmente la diferencia de costo entre subárboles y mantener ocupadas las unidades de procesamiento cuando la carga de trabajo es suficientemente grande.
+
 = Uso de inteligencia artificial
 
 #table(
@@ -300,4 +304,9 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
   [Incorpora una forma de calcular el balance de carga usando los tiempos de los hilos, interpretando el cociente entre tiempo promedio y tiempo máximo.],
   [Sí],
   [Permitió incorporar el calculo de balance de carga],
+
+  [ChatGPT],
+  [A partir de esta tabla de tiempos de ejecución, calcula los speedup (Ts/Tp) y eficiencia (S/P) y damelas en el mismo formato.],
+  [Sí],
+  [Realizó una tarea que habría sido repetitiva y la devolvió en el formato exacto para copiar y pegar en la herramienta de redacción.],
 )
