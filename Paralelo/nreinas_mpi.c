@@ -105,7 +105,7 @@ int main(int argc , char* argv[]){
     return 0;
 }
 
-/* Proceso master. Genera tareas, las distribuye y consolida resultados. */
+/* Proceso master. Genera tareas, las distribuye y suma resultados. */
 void f0(int num_nodes , double tIni){
     /*
      * Generación de tareas.
