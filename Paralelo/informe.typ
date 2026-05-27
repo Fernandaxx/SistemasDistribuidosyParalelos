@@ -3,9 +3,9 @@
 
 #show: informe.with(
   unidad-academica: "informática",
-  asignatura: "F0317 Física II",
-  trabajo: "Informe de Laboratorio Nº 2",
-  equipo: "Grupo 3",
+  asignatura: "I116 Sistemas Distribuidos y Paralelos",
+  trabajo: "Trabajo Práctico - Régimen de Promoción",
+  equipo: "Grupo 18",
   autores: (
     (
       nombre: "Avila Montoya, Eygleen Fernanda",
@@ -19,7 +19,7 @@
     ),
   ),
 
-  titulo: [Circuitos de corriente continua en estado transistorio],
+  titulo: [Paralelización del problema de las N-Reinas],
 
   fecha: "2026-05-27",
 )
