@@ -258,7 +258,7 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
 
 #table(
   columns: (1fr, 1fr, 1fr, 1fr),
-  align: center,
+  align: center + horizon,
 
   table.header(
     table.cell(fill: color-fijos)[*Herramienta*],
@@ -272,23 +272,32 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
   [La comparación permitió justificar el uso de una asignación dinámica, ya que la carga de trabajo no es homogénea entre subárboles y una distribución fija podía provocar desbalance.],
 
   [ChatGPT],
-  [Diseñar una estructura master-worker para N-Reinas donde el proceso maestro genere tareas y los procesos trabajadores soliciten trabajo dinámicamente.],
-  [Sí],
-  [Genero la estructura basica del programa MPI basada en un pool de tareas.],
+  [Diseñar una estructura master-worker MPI+Pthreads para N-Reinas donde el proceso maestro genere tareas y los procesos trabajadores soliciten trabajo dinámicamente para luego resolverlo en sus hilos.],
+  [Parcial],
+  [Genero la estructura basica del programa MPI basada en un pool de tareas, pero lo hizo sin modularizar separando las funciones MPI de Pthreads.],
 
   [Gemini],
-  [],
+  [Generar el código paralelo para N-Reinas siguiendo la estructura dada.],
   [Parcial],
   [Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
 
   [Gemini],
-  [Modificar la solución híbrida para que el rank 0 también participe del cómputo mientras administra la distribución de tareas hacia los demás procesos MPI, evitando que quede ocioso durante la ejecución.],
+  [Reescribir la solución modularizando MPI y Pthreads en archivos separados.],	
   [Parcial],
-  [La solución tenía un hilo en MPI para que el rank 0 compute sin bloquearse. Se cambió por una versión que usa MPI_probe.],
+  [Desacopló la lógica de comunicación de red de la lógica de distribución interna de tareas, pero dejó un hilo en el proceso principal de MPI.],
+
+  [Gemini],
+  [Reestructuración para eliminar el uso de hilos en el archivo MPI.],
+  [Sí],
+  [Modificó correctamente la solución.],
+
+  [Gemini],
+  [Agregar un parámetro T para recibir la cantidad de hilos por nodo por consola y modificar el main de MPI para que use funciones contenedoras (f0, fN).],
+  [Sí],
+  [Modificó correctamente la solución.],
 
   [ChatGPT],
   [Incorpora una forma de calcular el balance de carga usando los tiempos de los hilos, interpretando el cociente entre tiempo promedio y tiempo máximo.],
   [Sí],
   [Permitió incorporar el calculo de balance de carga],
 )
-
