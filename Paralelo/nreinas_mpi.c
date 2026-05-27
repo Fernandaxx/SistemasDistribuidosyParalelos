@@ -89,13 +89,15 @@ int main(int argc , char* argv[]){
     if (rank == 0){
         int local_threads = (NUM_THREADS > 1) ? NUM_THREADS - 1 : 1;
         CrearHilosLocales(local_threads , threads , thread_results);
-    } else{
+    }
+    else{
         CrearHilosRemotos(NUM_THREADS , threads , thread_results);
     }
 
     if (rank == 0){
         f0(num_nodes , tIni);
-    } else{
+    }
+    else{
         fN();
     }
 
@@ -210,14 +212,9 @@ void f0(int num_nodes , double tIni){
     long long TOTAL = (grand_totals.count8 * 8) + (grand_totals.count4 * 4) + (grand_totals.count2 * 2);
 
     double avg_thread_time = 0.0;
-    double load_balance = 0.0;
 
     if (thread_count > 0){
         avg_thread_time = sum_thread_time / thread_count;
-    }
-
-    if (max_thread_time > 0.0){
-        load_balance = avg_thread_time / max_thread_time;
     }
 
     double tFin = dwalltime();
@@ -226,9 +223,8 @@ void f0(int num_nodes , double tIni){
     printf("N=%d, Hilos por proceso=%d, Soluciones Totales=%lld, Soluciones Unicas=%lld, Tiempo=%f segundos\n" ,
         SIZE , NUM_THREADS , TOTAL , UNIQUE , tFin - tIni
     );
-    printf("Tiempo promedio hilos=%f, Tiempo maximo hilo=%f, Balance carga=%f\n" ,
-        avg_thread_time , max_thread_time , load_balance
-    );
+    printf("Tiempo promedio hilos=%f, Tiempo maximo hilo=%f\n" ,
+        avg_thread_time , max_thread_time);
 }
 
 /* Proceso worker remoto. Pide lotes, los entrega a sus hilos y envía resultados. */
