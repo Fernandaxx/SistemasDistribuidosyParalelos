@@ -15,7 +15,7 @@ static pthread_cond_t work_cond = PTHREAD_COND_INITIALIZER;
 static pthread_cond_t done_cond = PTHREAD_COND_INITIALIZER;
 
 /*
- * Los hilos locales del rank 0 se crean antes de medir tiempo.
+ * Los hilos locales del rank 0 se crean antes.
  * Quedan esperando hasta que el master termine de generar el pool.
  */
 static int local_pool_ready = 0;

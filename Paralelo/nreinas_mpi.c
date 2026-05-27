@@ -85,22 +85,19 @@ int main(int argc , char* argv[]){
     MASK = (1 << SIZE) - 1;
     SIDEMASK = TOPBIT | 1;
 
+    MPI_Barrier(MPI_COMM_WORLD);
 
     double tIni = dwalltime();
     if (rank == 0){
         int local_threads = (NUM_THREADS > 1) ? NUM_THREADS - 1 : 1;
         CrearHilosLocales(local_threads , threads , thread_results);
-    }
-    else{
+    } else{
         CrearHilosRemotos(NUM_THREADS , threads , thread_results);
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
     if (rank == 0){
         f0(num_nodes , tIni);
-    }
-    else{
+    } else{
         fN();
     }
 
