@@ -78,24 +78,40 @@ Se obtuvieron los siguientes tiempos de ejecución. Para UP=1 se muestran los $T
 #tabla-carga-UP(
   [*Tiempo de ejecución (s)*],
   // Secuencial
-  [0.180799], [1.114150], [7.252414], [51.850495], [364.626777],
+  [0.180799],
+  [1.114150],
+  [7.252414],
+  [51.850495],
+  [364.626777],
   // UP=4
-  [0.077322], [0.407687], [2.589023], [17.822687], [129.300311],
+  [0.077322],
+  [0.407687],
+  [2.589023],
+  [17.822687],
+  [129.300311],
   // UP=8
-  [0.041199], [0.184199], [1.132308], [7.703234], [55.764344],
+  [0.041199],
+  [0.184199],
+  [1.132308],
+  [7.703234],
+  [55.764344],
   // UP=16
-  [0.029512], [0.096900], [0.546728], [3.676072], [26.567920],
+  [0.029512],
+  [0.096900],
+  [0.546728],
+  [3.676072],
+  [26.567920],
 )
 Para los tamaños de tableros menores, el algoritmo paralelo ya muestra mejoras respecto de la versión secuencial, aunque el beneficio obtenido es relativamente bajo.\
 A medida que aumenta el tamaño del problema, el paralelismo se aprovecha mejor. En los casos con 8 y 16 unidades de procesamiento, los tiempos de ejecución disminuyen considerablemente respecto de la versión secuencial.
 /*
-Número de resultados: 365596 - Soluciones únicas: 45752  
+Número de resultados: 365596 - Soluciones únicas: 45752
 N=14, Totales=365596, Unicas=45752
-Número de resultados: 2279184 - Soluciones únicas: 285053  
+Número de resultados: 2279184 - Soluciones únicas: 285053
 N=15, Totales=2279184, Unicas=285053
-Número de resultados: 14772512 - Soluciones únicas: 1846955  
+Número de resultados: 14772512 - Soluciones únicas: 1846955
 N=16, Totales=14772512, Unicas=1846955
-Número de resultados: 95815104 - Soluciones únicas: 11977939  
+Número de resultados: 95815104 - Soluciones únicas: 11977939
 N=17, Totales=95815104, Unicas=11977939
 Número de resultados: 666090624 - Soluciones únicas: 83263591
 N=18, Totales=666090624, Unicas=83263591
@@ -105,13 +121,29 @@ Se calculó la tabla de speedups  a partir de los tiempos de ejecución de la si
 $ S (P) = ( T_s )/( T_p (P) ) $
 #tabla-carga-UP(
   [*Speedup*],
-  [1], [1], [1], [1], [1],
+  [1],
+  [1],
+  [1],
+  [1],
+  [1],
   // UP=4
-  [2.34], [2.73], [2.80], [2.91], [2.82],
+  [2.34],
+  [2.73],
+  [2.80],
+  [2.91],
+  [2.82],
   // UP=8
-  [4.39], [6.05], [6.40], [6.73], [6.54],
+  [4.39],
+  [6.05],
+  [6.40],
+  [6.73],
+  [6.54],
   // UP=16
-  [6.13], [11.50], [13.26], [14.11], [13.72],
+  [6.13],
+  [11.50],
+  [13.26],
+  [14.11],
+  [13.72],
 )
 
 Para todos los escenarios evaluados, el speedup obtenido es mayor que 1, lo que indica que el algoritmo paralelo logra mejorar el rendimiento respecto de la versión secuencial incluso para los tamaños de problema más chicos. Sin embargo, para cargas menores, las mejoras observadas son moderadas y el speedup se encuentra bastante alejado del ideal. Para N=14 se observa que, si bien el tiempo de ejecución mejoraba, no es una mejora significativa ya que el speedup no se acerca al ideal. Esto se debe a que, para tamaños de problema chicos, el overhead de comunicación sigue siendo significativo frente al tiempo de cómputo.\
@@ -123,19 +155,74 @@ $ E(P) = ( S(P) )/P $
 #tabla-carga-UP(
   [*Eficiencia*],
   // Secuencial
-  [1], [1], [1], [1], [1],
+  [1],
+  [1],
+  [1],
+  [1],
+  [1],
   // UP=4
-  [0.59], [0.68], [0.70], [0.73], [0.70],
+  [0.59],
+  [0.68],
+  [0.70],
+  [0.73],
+  [0.70],
   // UP=8
-  [0.55], [0.76], [0.80], [0.84], [0.82],
+  [0.55],
+  [0.76],
+  [0.80],
+  [0.84],
+  [0.82],
   // UP=16
-  [0.38], [0.72], [0.83], [0.88], [0.86],
+  [0.38],
+  [0.72],
+  [0.83],
+  [0.88],
+  [0.86],
 )
 Cuando analizamos N=14 podemos ver que, a pesar de que se obtenían mayor tiempo de ejecución y speedup al aumentar la cantidad de unidades de procesamiento, en realidad se están aprovechando cada vez menos los recursos. La paralelización sí aporta beneficios, pero implica un consumo innecesario de recursos y energía.\
 Para el resto de las cargas, se puede analizar escalabilidad fuerte y escalabilidad débil.\
 Un programa paralelo es *fuertemente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar el número de unidades de procesamiento sin aumentar el tamaño del problema. Para analizar esta escalabilidad entonces, miramos las columnas de la tabla. En todos los casos para N entre 15 y 18 se puede observar que la eficiencia se mantiene aproximadamente constante, por lo que el algoritmo es fuertemente escalable para estas cargas.\
 Un programa paralelo es *débilmente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar simultáneamente el número de unidades de procesamiento y el tamaño del problema. Por lo tanto, observamos las diagonales de la tabla. Si observamos la diagonal que va desde N=16 a N=18, vemos que la eficiencia se mantiene aproximadamente constante (0,70 - 0,84 - 0,86). Si, en cambio, observamos la diagonal que va de N=15 a N=17, podemos ver que la eficiencia continúa aumentando (0,68 - 0,80 - 0.88). Esto es incluso mejor que mantenerse constante, ya que significa que la utilización de los recursos no solo no disminuye sino que mejora. Ambos casos son, entonces, débilmente escalables.
 
+== Análisis de balance de carga
+
+El balance de carga se calculó según la relación:
+
+$ B = ("Promedio" (T)) / ("Máximo" (T)) $
+
+donde $"Promedio" (T)$ representa el promedio de los tiempos de ejecución de los hilos y $"Máximo" (T)$ representa el tiempo del hilo que más tardó. Esta métrica permite evaluar qué tan equitativamente se distribuyó el trabajo entre las unidades de procesamiento. Un valor cercano a 1 indica una distribución equilibrada, mientras que valores más bajos indican mayor desbalance.
+
+#tabla-carga-UP(
+  [*Balance de carga*],
+  // Secuencial
+  [1],
+  [1],
+  [1],
+  [1],
+  [1],
+  // UP=4
+  [0.973],
+  [0.992],
+  [0.993],
+  [0.993],
+  [0.993],
+  // UP=8
+  [0.954],
+  [0.976],
+  [0.980],
+  [0.989],
+  [0.987],
+  // UP=16
+  [0.770],
+  [0.938],
+  [0.962],
+  [0.965],
+  [0.969],
+)
+
+Los resultados muestran que el balance de carga es alto en la mayoría de las ejecuciones. Para 4 unidades de procesamiento, el balance se mantiene siempre por encima de 0.97, lo que indica una distribución muy pareja del trabajo. Para 8 unidades de procesamiento también se observa un buen comportamiento, con valores superiores a 0.95 y cercanos a 0.99 en las cargas más grandes.
+
+El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde el balance baja a 0.770. Esto se explica porque la carga de trabajo es pequeña en relación con la cantidad de hilos disponibles: al haber más unidades de procesamiento, el costo de coordinación y la irregularidad de los subárboles del backtracking tienen mayor peso relativo. Sin embargo, a medida que aumenta N, el balance mejora progresivamente hasta alcanzar 0.969 para N=18. Esto confirma que la estrategia de distribución dinámica de tareas resulta adecuada para este problema, ya que permite compensar parcialmente la diferencia de costo entre subárboles y mantener ocupadas las unidades de procesamiento cuando la carga de trabajo es suficientemente grande.
 = Uso de inteligencia artificial
 #table(
   columns: (1fr, 1fr, 1fr),
