@@ -1,34 +1,3 @@
-#import "@preview/barcala:0.3.0": apendice, informe, nomenclatura
-#import "@preview/lilaq:0.5.0" as lq // Paquete para gráficos
-
-#show: informe.with(
-  unidad-academica: "informática",
-  asignatura: "F0317 Física II",
-  trabajo: "Informe de Laboratorio Nº 2",
-  equipo: "Grupo 3",
-  autores: (
-    (
-      nombre: "Avila Montoya, Eygleen Fernanda",
-      email: "eygleen.avila@alu.ing.unlp.edu.ar",
-      legajo: "02931/2",
-    ),
-    (
-      nombre: "Bejarano, Abril",
-      email: "abril.bejarano@alu.ing.unlp.edu.ar",
-      legajo: "03339/5",
-    ),
-  ),
-
-  titulo: [Circuitos de corriente continua en estado transistorio],
-
-  fecha: "2026-05-27",
-)
-
-// Enlaces de colores
-#show cite: set text(blue)
-#show link: set text(blue)
-#show ref: set text(blue)
-
 #let color-titulos = rgb("426A8C")
 #let color-fijos = rgb("D0DCE6")
 #set heading(numbering: "1.1.")
@@ -256,19 +225,21 @@ Los resultados muestran que el balance de carga es alto en la mayoría de las ej
 El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde el balance baja a 0.770. Esto se explica porque la carga de trabajo es pequeña en relación con la cantidad de hilos disponibles: al haber más unidades de procesamiento, el costo de coordinación y la irregularidad de los subárboles del backtracking tienen mayor peso relativo. Sin embargo, a medida que aumenta N, el balance mejora progresivamente hasta alcanzar 0.969 para N=18. Esto confirma que la estrategia de distribución dinámica de tareas resulta adecuada para este problema, ya que permite compensar parcialmente la diferencia de costo entre subárboles y mantener ocupadas las unidades de procesamiento cuando la carga de trabajo es suficientemente grande.
 = Uso de inteligencia artificial
 #table(
-  columns: (1fr, 1fr, 1fr, 1fr),
+  columns: (1fr, 1fr, 1fr),
   align: center,
+  table.cell(colspan: 3, fill: color-titulos)[#text(white)[*Herramienta: Gemini*]],
   table.header(
-    table.cell(fill: color-fijos)[*Herramienta*],
     table.cell(fill: color-fijos)[*PROMPT*],
     table.cell(fill: color-fijos)[*ÉXITO*],
     table.cell(fill: color-fijos)[*OBSERVACIÓN*],
   ),
-  [Gemini], [], [Parcial], [Dio una versión en un solo archivo.],
-  [Gemini], [], [Parcial], [Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
-  [Gemini], [], [Parcial], [La solución tenía un hilo en mpi para que el rank0 compute sin bloquearse, se cambió por una versión que usa MPI_probe.],
+  [], [Parcial], [Dio una versión en un solo archivo.],
+  [],
+  [Parcial],
+  [Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
+  [],
+  [Parcial],
+  [La solución tenía un hilo en mpi para que el rank0 compute sin bloquearse, se cambió por una versión que usa MPI_probe.],
   [], [Si], [],
   [], [], [],
 )
-
-
