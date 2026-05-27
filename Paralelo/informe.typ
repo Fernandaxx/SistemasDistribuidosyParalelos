@@ -71,12 +71,12 @@ Se representa el tablero utilizando un arreglo de enteros donde cada índice del
 
 == Estrategia para determinar si un tablero es válido
 El algoritmo construye las soluciones garantizando que cada nueva reina agregada esté en una posición segura. Para esto, mantiene las variables down, left y right, que se actualizan en cada llamada a las funciones recursivas para tener un registro de las posiciones que están amenazadas por las reinas de las filas anteriores y, por lo tanto, son inválidas.\
-Las posiciones válidas para la fila actual se marcan con un 1 en la variable bitmap, la cuál se calcula a partir de las variables down, left y right.\
+Las posiciones válidas para la fila actual se marcan con un 1 en la variable bitmap, la cual se calcula a partir de las variables down, left y right.\
 Además de generar únicamente tableros que cumplen las condiciones del problema de las N-Reinas, también se descartan todos los tableros que sean rotaciones o espejos de soluciones ya encontradas. Esto se logra limitando las columnas iniciales evaluadas en la primera fila (con variables como BOUND1) y utilizando la función Check() para reconocer simetrías.
 
 == Almacenamiento de resultados y contabilización
 El arreglo BOARD se sobrescribe continuamente a medida que el algoritmo se ejecuta. Para llevar el registro de los tableros válidos, se utilizan contadores según la simetría de la solución hallada.\
-Si una solución puede rotarse 90, 180 y 270 grados, luego espejarse y realizar las mismas rotaciones y que en los ocho casos las soluciones sean diferentes, entonces se suma a COUNT8. Puede suceder que alguna de estas rotaciones resulte en un tablero idéntico al que se tiene, y es en estos casos que se utilizan COUNT4 Y COUNT2, según el nivel de simetría.\
+Si una solución puede rotarse 90, 180 y 270 grados, luego espejarse y realizar las mismas rotaciones, y si las ocho configuraciones resultantes son diferentes, entonces se suma a COUNT8. Puede suceder que alguna de estas rotaciones resulte en un tablero idéntico al que se tiene, y es en estos casos que se utilizan COUNT4 y COUNT2, según el nivel de simetría.\
 Finalmente, el número total de tableros válidos se calcula multiplicando cada contador por la cantidad de tableros que representa (TOTAL = COUNT8 \* 8 + COUNT4 \* 4 + COUNT2 \* 2), mientras que el total de tableros únicos se obtiene simplemente sumando los contadores (UNIQUE = COUNT8 + COUNT4 + COUNT2).
 
 = Estrategia y descripción de las etapas de diseño paralelo
@@ -98,10 +98,10 @@ Esta aglomeración también favorece la localidad y reduce la sincronización de
 Por lo tanto, la aglomeración elegida establece un compromiso entre overhead y balance de carga. Los lotes permiten disminuir la frecuencia de comunicación entre procesos, mientras que la existencia de múltiples tareas en el pool permite que la asignación posterior siga siendo dinámica. Esto es importante en N-Reinas porque distintos subárboles del backtracking pueden tener costos muy diferentes.
 
 == Mapeo
-En esta implementación se utilizaron dos estrategias de *mapeo dinámico centralizado*. A nivel de nodos, el proceso con rank 0 es el encargado de generar las tareas y distribuirlas entre los demás nodos. Cada vez que un nodo finaliza el conjunto de tareas asignadas, le solicita nuevas tareas y éste entrega más trabajo mientras queden tareas disponibles. Esto corresponde a un mapeo *Master-Worker*.\
+En esta implementación se utilizaron dos estrategias de *mapeo dinámico centralizado*. A nivel de nodos, el proceso con rank 0 es el encargado de generar las tareas y distribuirlas entre los demás nodos. Cada vez que un nodo finaliza el conjunto de tareas asignadas, le solicita nuevas tareas y este entrega más trabajo mientras queden tareas disponibles. Esto corresponde a un mapeo *Master-Worker*.\
 Dentro de cada nodo, el mapeo entre los hilos se realiza con una estrategia *Bag of Tasks*. En los hilos que corresponden a los nodos worker, las tareas recibidas se almacenan en un vector compartido local, desde el cual los distintos hilos extraen trabajo hasta que se vacíe. Una vez que todas las tareas locales fueron procesadas, el nodo vuelve a solicitar nuevas tareas. Los hilos del nodo Master, en cambio, toman tareas directamente del task pool. Esto es posible por la arquitectura de memoria compartida que tiene internamente cada nodo. De esta manera se evita la necesidad de pedir tareas que ya se encuentran en su espacio de memoria.\
 Combinando estas dos estrategias se logra un mejor balance de carga, ya que las unidades de procesamiento que terminan antes continúan obteniendo trabajo mientras existan tareas pendientes.\
-Además, el uso de vectores locales reduce la frecuencia de comunicación con el master, disminuyendo en parte overhead de coordinación global. Esto permite aprovechar mejor los recursos compartidos dentro de cada nodo y reduce el tiempo en el que las unidades de procesamiento permanecen ociosas.
+Además, el uso de vectores locales reduce la frecuencia de comunicación con el master, disminuyendo en parte el overhead de coordinación global. Esto permite aprovechar mejor los recursos compartidos dentro de cada nodo y reduce el tiempo en el que las unidades de procesamiento permanecen ociosas.
 
 = Tiempos de ejecución, métricas y análisis de escalabilidad
 == Análisis de tiempos de ejecución
@@ -148,7 +148,7 @@ Número de resultados: 666090624 - Soluciones únicas: 83263591
 N=18, Totales=666090624, Unicas=83263591
 */
 == Análisis de speedup
-Se calculó la tabla de speedups  a partir de los tiempos de ejecución de la siguiente manera:\
+Se calculó la tabla de speedups a partir de los tiempos de ejecución de la siguiente manera:\
 $ S (P) = ( T_s )/( T_p (P) ) $
 #tabla-carga-UP(
   [*Speedup*],
@@ -211,7 +211,7 @@ $ E(P) = ( S(P) )/P $
   [0.88],
   [0.86],
 )
-Cuando analizamos N=14 podemos ver que, a pesar de que se obtenían mayor tiempo de ejecución y speedup al aumentar la cantidad de unidades de procesamiento, en realidad se están aprovechando cada vez menos los recursos. La paralelización sí aporta beneficios, pero implica un consumo innecesario de recursos y energía.\
+Cuando analizamos N=14 podemos ver que, menores tiempos de ejecución y un mayor speedup al aumentar la cantidad de unidades de procesamiento, en realidad se están aprovechando cada vez menos los recursos. La paralelización sí aporta beneficios, pero implica un consumo innecesario de recursos y energía.\
 Para el resto de las cargas, se puede analizar escalabilidad fuerte y escalabilidad débil.\
 Un programa paralelo es *fuertemente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar el número de unidades de procesamiento sin aumentar el tamaño del problema. Para analizar esta escalabilidad entonces, miramos las columnas de la tabla. En todos los casos para N entre 15 y 18 se puede observar que la eficiencia se mantiene aproximadamente constante, por lo que el algoritmo es fuertemente escalable para estas cargas.\
 Un programa paralelo es *débilmente escalable* si la eficiencia se mantiene aproximadamente constante al incrementar simultáneamente el número de unidades de procesamiento y el tamaño del problema. Por lo tanto, observamos las diagonales de la tabla. Si observamos la diagonal que va desde N=16 a N=18, vemos que la eficiencia se mantiene aproximadamente constante (0,70 - 0,84 - 0,86). Si, en cambio, observamos la diagonal que va de N=15 a N=17, podemos ver que la eficiencia continúa aumentando (0,68 - 0,80 - 0.88). Esto es incluso mejor que mantenerse constante, ya que significa que la utilización de los recursos no solo no disminuye sino que mejora. Ambos casos son, entonces, débilmente escalables.
@@ -278,7 +278,7 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
   [ChatGPT],
   [Diseñar una estructura master-worker MPI+Pthreads para N-Reinas donde el proceso maestro genere tareas y los procesos trabajadores soliciten trabajo dinámicamente para luego resolverlo en sus hilos.],
   [Parcial],
-  [Genero la estructura basica del programa MPI basada en un pool de tareas, pero lo hizo sin modularizar separando las funciones MPI de Pthreads.],
+  [Generó la estructura básica del programa MPI basada en un pool de tareas, pero lo hizo sin modularizar separando las funciones MPI de Pthreads.],
 
   [Gemini],
   [Generar el código paralelo para N-Reinas siguiendo la estructura dada.],
@@ -301,12 +301,12 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
   [Modificó correctamente la solución.],
 
   [ChatGPT],
-  [Incorpora una forma de calcular el balance de carga usando los tiempos de los hilos, interpretando el cociente entre tiempo promedio y tiempo máximo.],
+  [Incorporar una forma de calcular el balance de carga usando los tiempos de los hilos, interpretando el cociente entre tiempo promedio y tiempo máximo.],
   [Sí],
   [Permitió incorporar el calculo de balance de carga],
 
   [ChatGPT],
-  [A partir de esta tabla de tiempos de ejecución, calcula los speedup (Ts/Tp) y eficiencia (S/P) y damelas en el mismo formato.],
+  [A partir de esta tabla de tiempos de ejecución, calcula los speedup (Ts/Tp) y eficiencia (S/P) y dámelas en el mismo formato.],
   [Sí],
   [Realizó una tarea que habría sido repetitiva y la devolvió en el formato exacto para copiar y pegar en la herramienta de redacción.],
 )
