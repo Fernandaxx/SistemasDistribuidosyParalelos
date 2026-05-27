@@ -23,8 +23,6 @@ pthread_t threads[MAX_THREADS];
 results_t thread_results[MAX_THREADS];
 
 /* Prototipos locales. */
-double dwalltime(void);
-
 void f0(int num_nodes , double tIni);
 void fN(void);
 
@@ -116,7 +114,6 @@ void f0(int num_nodes , double tIni){
     for (int b1 = 2; b1 < SIZEE; b1++){
         temp_board[1] = 1 << b1;
         GenerateTasks1(2 , (2 | (1 << b1)) << 1 , 1 | (1 << b1) , (1 << b1) >> 1 , b1);
-
     }
 
     int lastm = TOPBIT | 1;
@@ -145,8 +142,8 @@ void f0(int num_nodes , double tIni){
     while (active_remote_workers > 0){
         MPI_Status status;
         int request_msg;
-        MPI_Recv(&request_msg , 1 , MPI_INT , MPI_ANY_SOURCE , TAG_REQUEST , MPI_COMM_WORLD , &status);
 
+        MPI_Recv(&request_msg , 1 , MPI_INT , MPI_ANY_SOURCE , TAG_REQUEST , MPI_COMM_WORLD , &status);
 
         task_t mpi_batch[BATCH_SIZE];
         int tasks_grabbed = 0;
@@ -161,45 +158,76 @@ void f0(int num_nodes , double tIni){
 
         MPI_Send(mpi_batch , tasks_grabbed * sizeof(task_t) , MPI_BYTE , status.MPI_SOURCE , TAG_WORK , MPI_COMM_WORLD);
 
-        // Un lote vacío indica que no quedan tareas para ese rank remoto.
-
+        /* Un lote vacío indica que no quedan tareas para ese rank remoto. */
         if (tasks_grabbed == 0){
             active_remote_workers--;
         }
     }
 
-    results_t grand_totals = {0, 0, 0};
+    results_t grand_totals = {0, 0, 0, 0.0};
 
-    /* Resultados de los hilos locales del rank 0. */
+    double sum_thread_time = 0.0;
+    double max_thread_time = 0.0;
+    int thread_count = 0;
+
+    /* Resultados y tiempos de los hilos locales del rank 0. */
     for (int i = 0; i < local_threads; i++){
         pthread_join(threads[i] , NULL);
 
         grand_totals.count8 += thread_results[i].count8;
         grand_totals.count4 += thread_results[i].count4;
         grand_totals.count2 += thread_results[i].count2;
+
+        sum_thread_time += thread_results[i].time;
+
+        if (thread_results[i].time > max_thread_time){
+            max_thread_time = thread_results[i].time;
+        }
+
+        thread_count++;
     }
 
-    /* Resultados enviados por los ranks remotos. */
+    /* Resultados y tiempos enviados por los ranks remotos. */
     for (int i = 1; i < num_nodes; i++){
-        results_t remote_totals = {0, 0, 0};
+        report_t remote_report = {0, 0, 0, 0.0, 0.0, 0};
 
-        MPI_Recv(&remote_totals , sizeof(results_t) , MPI_BYTE , i , TAG_RESULT , MPI_COMM_WORLD , MPI_STATUS_IGNORE);
+        MPI_Recv(&remote_report , sizeof(report_t) , MPI_BYTE , i , TAG_RESULT , MPI_COMM_WORLD , MPI_STATUS_IGNORE);
 
+        grand_totals.count8 += remote_report.count8;
+        grand_totals.count4 += remote_report.count4;
+        grand_totals.count2 += remote_report.count2;
 
-        grand_totals.count8 += remote_totals.count8;
-        grand_totals.count4 += remote_totals.count4;
-        grand_totals.count2 += remote_totals.count2;
+        sum_thread_time += remote_report.sum_thread_time;
+
+        if (remote_report.max_thread_time > max_thread_time){
+            max_thread_time = remote_report.max_thread_time;
+        }
+
+        thread_count += remote_report.thread_count;
     }
 
-    
     long long UNIQUE = grand_totals.count8 + grand_totals.count4 + grand_totals.count2;
     long long TOTAL = (grand_totals.count8 * 8) + (grand_totals.count4 * 4) + (grand_totals.count2 * 2);
-    
+
+    double avg_thread_time = 0.0;
+    double load_balance = 0.0;
+
+    if (thread_count > 0){
+        avg_thread_time = sum_thread_time / thread_count;
+    }
+
+    if (max_thread_time > 0.0){
+        load_balance = avg_thread_time / max_thread_time;
+    }
+
     double tFin = dwalltime();
 
     printf("Tareas generadas: %d\n" , total_tasks_generated);
     printf("N=%d, Hilos por proceso=%d, Soluciones Totales=%lld, Soluciones Unicas=%lld, Tiempo=%f segundos\n" ,
         SIZE , NUM_THREADS , TOTAL , UNIQUE , tFin - tIni
+    );
+    printf("Tiempo promedio hilos=%f, Tiempo maximo hilo=%f, Balance carga=%f\n" ,
+        avg_thread_time , max_thread_time , load_balance
     );
 }
 
@@ -210,12 +238,10 @@ void fN(void){
     while (1){
         MPI_Send(&request_msg , 1 , MPI_INT , 0 , TAG_REQUEST , MPI_COMM_WORLD);
 
-
         task_t recv_batch[BATCH_SIZE];
         MPI_Status status;
 
         MPI_Recv(recv_batch , BATCH_SIZE * sizeof(task_t) , MPI_BYTE , 0 , TAG_WORK , MPI_COMM_WORLD , &status);
-
 
         int bytes_received;
 
@@ -230,31 +256,47 @@ void fN(void){
         RepartirLoteRemoto(recv_batch , tasks_received);
     }
 
-    results_t node_totals = {0, 0, 0};
+    report_t node_report = {0, 0, 0, 0.0, 0.0, NUM_THREADS};
 
     for (int i = 0; i < NUM_THREADS; i++){
         pthread_join(threads[i] , NULL);
 
-        node_totals.count8 += thread_results[i].count8;
-        node_totals.count4 += thread_results[i].count4;
-        node_totals.count2 += thread_results[i].count2;
+        node_report.count8 += thread_results[i].count8;
+        node_report.count4 += thread_results[i].count4;
+        node_report.count2 += thread_results[i].count2;
+
+        node_report.sum_thread_time += thread_results[i].time;
+
+        if (thread_results[i].time > node_report.max_thread_time){
+            node_report.max_thread_time = thread_results[i].time;
+        }
     }
 
-    MPI_Send(&node_totals , sizeof(results_t) , MPI_BYTE , 0 , TAG_RESULT , MPI_COMM_WORLD);
-
+    MPI_Send(&node_report , sizeof(report_t) , MPI_BYTE , 0 , TAG_RESULT , MPI_COMM_WORLD);
 }
 
 /* Genera tareas derivadas de Backtrack1. */
 void GenerateTasks1(int y , int left , int down , int right , int bound1){
     if (y == 3){
         task_t t = {1, y, left, down, right, bound1, 0, 0, 0, {0}};
-        for (int i = 0; i < y; i++) t.initial_board[i] = temp_board[i];
+
+        for (int i = 0; i < y; i++){
+            t.initial_board[i] = temp_board[i];
+        }
+
         global_task_pool[total_tasks_generated++] = t;
         return;
     }
+
     int bitmap = MASK & ~(left | down | right);
-    if (y < bound1){ bitmap |= 2; bitmap ^= 2; }
+
+    if (y < bound1){
+        bitmap |= 2;
+        bitmap ^= 2;
+    }
+
     int bit;
+
     while (bitmap){
         bitmap ^= temp_board[y] = bit = -bitmap & bitmap;
         GenerateTasks1(y + 1 , (left | bit) << 1 , down | bit , (right | bit) >> 1 , bound1);
@@ -265,17 +307,33 @@ void GenerateTasks1(int y , int left , int down , int right , int bound1){
 void GenerateTasks2(int y , int left , int down , int right , int bound1 , int bound2 , int lastmask , int endbit){
     if (y == 3){
         task_t t = {0, y, left, down, right, bound1, bound2, lastmask, endbit, {0}};
-        for (int i = 0; i < y; i++) t.initial_board[i] = temp_board[i];
+
+        for (int i = 0; i < y; i++){
+            t.initial_board[i] = temp_board[i];
+        }
+
         global_task_pool[total_tasks_generated++] = t;
         return;
     }
+
     int bitmap = MASK & ~(left | down | right);
-    if (y < bound1){ bitmap |= SIDEMASK; bitmap ^= SIDEMASK; }
-    else if (y == bound2){
-        if (!(down & SIDEMASK)) return;
-        if ((down & SIDEMASK) != SIDEMASK) bitmap &= SIDEMASK;
+
+    if (y < bound1){
+        bitmap |= SIDEMASK;
+        bitmap ^= SIDEMASK;
     }
+    else if (y == bound2){
+        if (!(down & SIDEMASK)){
+            return;
+        }
+
+        if ((down & SIDEMASK) != SIDEMASK){
+            bitmap &= SIDEMASK;
+        }
+    }
+
     int bit;
+
     while (bitmap){
         bitmap ^= temp_board[y] = bit = -bitmap & bitmap;
         GenerateTasks2(y + 1 , (left | bit) << 1 , down | bit , (right | bit) >> 1 , bound1 , bound2 , lastmask , endbit);
@@ -285,7 +343,9 @@ void GenerateTasks2(int y , int left , int down , int right , int bound1 , int b
 double dwalltime(void){
     double sec;
     struct timeval tv;
+
     gettimeofday(&tv , NULL);
     sec = tv.tv_sec + tv.tv_usec / 1000000.0;
+
     return sec;
 }

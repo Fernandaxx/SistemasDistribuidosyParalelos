@@ -24,7 +24,6 @@ static pthread_cond_t local_pool_ready_cond = PTHREAD_COND_INITIALIZER;
 typedef struct{
     int board[MAXSIZE];
     long long c8 , c4 , c2;
-
 } ThreadState;
 
 /* Prototipos locales. */
@@ -50,15 +49,18 @@ void ProcesarTarea(task_t* task , ThreadState* state){
 void* HiloLocal(void* arg){
     results_t* my_results = (results_t*) arg;
     ThreadState my_state = {{0}, 0, 0, 0};
+    double my_time = 0.0;
 
     /*
      * Evita que los hilos locales terminen antes de que existan tareas.
      * El rank 0 los libera cuando termina de construir el pool.
      */
     pthread_mutex_lock(&pool_mutex);
+
     while (!local_pool_ready){
         pthread_cond_wait(&local_pool_ready_cond , &pool_mutex);
     }
+
     pthread_mutex_unlock(&pool_mutex);
 
     while (1){
@@ -70,14 +72,20 @@ void* HiloLocal(void* arg){
         }
 
         task_t t = global_task_pool[next_task_to_dispatch++];
+
         pthread_mutex_unlock(&pool_mutex);
 
+        double t_task_ini = dwalltime();
         ProcesarTarea(&t , &my_state);
+        double t_task_fin = dwalltime();
+
+        my_time += t_task_fin - t_task_ini;
     }
 
     my_results->count8 = my_state.c8;
     my_results->count4 = my_state.c4;
     my_results->count2 = my_state.c2;
+    my_results->time = my_time;
 
     return NULL;
 }
@@ -87,7 +95,7 @@ void CrearHilosLocales(int num_threads , pthread_t* threads , results_t* thread_
     local_pool_ready = 0;
 
     for (int i = 0; i < num_threads; i++){
-        thread_results[i] = (results_t){0, 0, 0};
+        thread_results[i] = (results_t){0, 0, 0, 0.0};
 
         if (pthread_create(&threads[i] , NULL , HiloLocal , &thread_results[i]) != 0){
             fprintf(stderr , "Error al crear hilo local %d\n" , i);
@@ -108,6 +116,7 @@ void LiberarHilosLocales(void){
 void* HiloRemoto(void* arg){
     results_t* my_results = (results_t*) arg;
     ThreadState my_state = {{0}, 0, 0, 0};
+    double my_time = 0.0;
 
     while (1){
         pthread_mutex_lock(&batch_mutex);
@@ -122,11 +131,17 @@ void* HiloRemoto(void* arg){
         }
 
         task_t t = shared_batch[shared_batch_idx++];
+
         pthread_mutex_unlock(&batch_mutex);
 
+        double t_task_ini = dwalltime();
         ProcesarTarea(&t , &my_state);
+        double t_task_fin = dwalltime();
+
+        my_time += t_task_fin - t_task_ini;
 
         pthread_mutex_lock(&batch_mutex);
+
         tasks_completed++;
 
         if (tasks_completed == shared_batch_size){
@@ -139,6 +154,7 @@ void* HiloRemoto(void* arg){
     my_results->count8 = my_state.c8;
     my_results->count4 = my_state.c4;
     my_results->count2 = my_state.c2;
+    my_results->time = my_time;
 
     return NULL;
 }
@@ -146,7 +162,7 @@ void* HiloRemoto(void* arg){
 /* Crea los hilos del rank remoto que procesan lotes enviados por MPI. */
 void CrearHilosRemotos(int num_threads , pthread_t* threads , results_t* thread_results){
     for (int i = 0; i < num_threads; i++){
-        thread_results[i] = (results_t){0, 0, 0};
+        thread_results[i] = (results_t){0, 0, 0, 0.0};
 
         if (pthread_create(&threads[i] , NULL , HiloRemoto , &thread_results[i]) != 0){
             fprintf(stderr , "Error al crear hilo remoto %d\n" , i);
@@ -205,8 +221,13 @@ void Check(ThreadState* state , task_t* t){
                 bit <<= 1;
             }
 
-            if (*own > bit) return;
-            if (*own < bit) break;
+            if (*own > bit){
+                return;
+            }
+
+            if (*own < bit){
+                break;
+            }
         }
 
         if (own > BOARDE){
@@ -224,8 +245,13 @@ void Check(ThreadState* state , task_t* t){
                 bit <<= 1;
             }
 
-            if (*own > bit) return;
-            if (*own < bit) break;
+            if (*own > bit){
+                return;
+            }
+
+            if (*own < bit){
+                break;
+            }
         }
 
         if (own > BOARDE){
@@ -243,8 +269,13 @@ void Check(ThreadState* state , task_t* t){
                 bit <<= 1;
             }
 
-            if (*own > bit) return;
-            if (*own < bit) break;
+            if (*own > bit){
+                return;
+            }
+
+            if (*own < bit){
+                break;
+            }
         }
     }
 
@@ -255,6 +286,7 @@ void Check(ThreadState* state , task_t* t){
 void Backtrack2(int y , int left , int down , int right , task_t* t , ThreadState* state){
     int bitmap = MASK & ~(left | down | right);
     int bit;
+
     if (y == SIZEE){
         if (bitmap && !(bitmap & t->lastmask)){
             state->board[y] = bitmap;
@@ -267,9 +299,15 @@ void Backtrack2(int y , int left , int down , int right , task_t* t , ThreadStat
             bitmap ^= SIDEMASK;
         }
         else if (y == t->bound2){
-            if (!(down & SIDEMASK)) return;
-            if ((down & SIDEMASK) != SIDEMASK) bitmap &= SIDEMASK;
+            if (!(down & SIDEMASK)){
+                return;
+            }
+
+            if ((down & SIDEMASK) != SIDEMASK){
+                bitmap &= SIDEMASK;
+            }
         }
+
         while (bitmap){
             bitmap ^= state->board[y] = bit = -bitmap & bitmap;
             Backtrack2(y + 1 , (left | bit) << 1 , down | bit , (right | bit) >> 1 , t , state);
@@ -281,6 +319,7 @@ void Backtrack2(int y , int left , int down , int right , task_t* t , ThreadStat
 void Backtrack1(int y , int left , int down , int right , task_t* t , ThreadState* state){
     int bitmap = MASK & ~(left | down | right);
     int bit;
+
     if (y == SIZEE){
         if (bitmap){
             state->board[y] = bitmap;
@@ -292,6 +331,7 @@ void Backtrack1(int y , int left , int down , int right , task_t* t , ThreadStat
             bitmap |= 2;
             bitmap ^= 2;
         }
+
         while (bitmap){
             bitmap ^= state->board[y] = bit = -bitmap & bitmap;
             Backtrack1(y + 1 , (left | bit) << 1 , down | bit , (right | bit) >> 1 , t , state);

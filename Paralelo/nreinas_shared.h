@@ -23,13 +23,25 @@ typedef struct{
     long long count8;
     long long count4;
     long long count2;
+    double time;
 } results_t;
+
+typedef struct{
+    long long count8;
+    long long count4;
+    long long count2;
+    double sum_thread_time;
+    double max_thread_time;
+    int thread_count;
+} report_t;
 
 /* Pool global de tareas usado por el rank 0. */
 extern task_t global_task_pool[MAX_GLOBAL_TASKS];
 extern int total_tasks_generated;
 extern int next_task_to_dispatch;
 extern pthread_mutex_t pool_mutex;
+
+double dwalltime(void);
 
 /* Funciones implementadas con Pthreads. */
 void CrearHilosLocales(int num_threads , pthread_t* threads , results_t* thread_results);
