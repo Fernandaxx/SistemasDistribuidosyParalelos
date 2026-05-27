@@ -254,6 +254,7 @@ donde $"Promedio" (T)$ representa el promedio de los tiempos de ejecución de lo
 Los resultados muestran que el balance de carga es alto en la mayoría de las ejecuciones. Para 4 unidades de procesamiento, el balance se mantiene siempre por encima de 0.97, lo que indica una distribución muy pareja del trabajo. Para 8 unidades de procesamiento también se observa un buen comportamiento, con valores superiores a 0.95 y cercanos a 0.99 en las cargas más grandes.
 
 El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde el balance baja a 0.770. Esto se explica porque la carga de trabajo es pequeña en relación con la cantidad de hilos disponibles: al haber más unidades de procesamiento, el costo de coordinación y la irregularidad de los subárboles del backtracking tienen mayor peso relativo. Sin embargo, a medida que aumenta N, el balance mejora progresivamente hasta alcanzar 0.969 para N=18. Esto confirma que la estrategia de distribución dinámica de tareas resulta adecuada para este problema, ya que permite compensar parcialmente la diferencia de costo entre subárboles y mantener ocupadas las unidades de procesamiento cuando la carga de trabajo es suficientemente grande.
+
 = Uso de inteligencia artificial
 #table(
   columns: (1fr, 1fr, 1fr, 1fr),
@@ -265,10 +266,16 @@ El caso más desfavorable aparece con 16 unidades de procesamiento y N=14, donde
     table.cell(fill: color-fijos)[*OBSERVACIÓN*],
   ),
   [Gemini], [], [Parcial], [Dio una versión en un solo archivo.],
+
   [Gemini], [], [Parcial], [Dio una versión con alocación de memoria dinámica que interfería con el registro del tiempo, ya que se contaba esa alocación en el tiempo de ejecución.],
+
   [Gemini], [], [Parcial], [La solución tenía un hilo en mpi para que el rank0 compute sin bloquearse, se cambió por una versión que usa MPI_probe.],
-  [], [Si], [],
-  [], [], [],
+  
+  [ChatGPT], [Diseñar una solución master-worker para N-Reinas donde el proceso maestro genere tareas y los procesos trabajadores soliciten trabajo dinámicamente, minimizando comunicación innecesaria.], [Sí], [Permitió definir una estrategia basada en un pool de tareas, donde el proceso maestro administra el trabajo y los procesos trabajadores solicitan nuevos lotes a medida que finalizan.],
+
+  [ChatGPT], [Incorpora una forma de calcular el balance de carga usando los tiempos de los hilos, interpretando el cociente entre tiempo promedio y tiempo máximo.], [Sí], [Permitió incorporar una métrica simple de balance de carga, donde valores cercanos a 1 indican que los hilos tuvieron tiempos de trabajo similares.],
+
+  [ChatGPT], [Comparar una asignación estática y una asignación dinámica de tareas para el problema de N-Reinas, considerando que el árbol de búsqueda es irregular y que los subárboles pueden tener costos distintos.], [Sí], [La comparación permitió justificar el uso de una asignación dinámica, ya que la carga de trabajo no es homogénea entre subárboles y una distribución fija podía provocar desbalance.],
 )
 
 
